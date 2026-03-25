@@ -11,20 +11,22 @@ const MobileNav = () => {
   const navRef = useRef(null)
 
   const onToggleNav = () => {
-    setNavShow((status) => {
-      if (status) {
-        enableBodyScroll(navRef.current)
-      } else {
-        // Prevent scrolling
-        disableBodyScroll(navRef.current)
-      }
-      return !status
-    })
+    setNavShow((status) => !status)
   }
 
   useEffect(() => {
+    const navElement = navRef.current
+
+    if (navElement) {
+      if (navShow) {
+        disableBodyScroll(navElement)
+      } else {
+        enableBodyScroll(navElement)
+      }
+    }
+
     return clearAllBodyScrollLocks
-  })
+  }, [navShow])
 
   return (
     <>
@@ -42,8 +44,8 @@ const MobileNav = () => {
           />
         </svg>
       </button>
-      <Transition appear show={navShow} as={Fragment} unmount={false}>
-        <Dialog as="div" onClose={onToggleNav} unmount={false}>
+      <Transition show={navShow} as={Fragment}>
+        <Dialog as="div" onClose={() => setNavShow(false)}>
           <TransitionChild
             as={Fragment}
             enter="ease-out duration-300"
@@ -52,7 +54,6 @@ const MobileNav = () => {
             leave="ease-in duration-200"
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
-            unmount={false}
           >
             <div className="fixed inset-0 z-60 bg-black/25" />
           </TransitionChild>
@@ -65,7 +66,6 @@ const MobileNav = () => {
             leave="transition ease-in duration-200 transform"
             leaveFrom="translate-x-0 opacity-95"
             leaveTo="translate-x-full opacity-0"
-            unmount={false}
           >
             <DialogPanel className="fixed top-0 left-0 z-70 h-full w-full bg-white/95 duration-300 dark:bg-gray-950/98">
               <nav

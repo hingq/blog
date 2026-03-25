@@ -1,11 +1,13 @@
 import { MetadataRoute } from 'next'
-import { allBlogs } from 'contentlayer/generated'
 import siteMetadata from '@/data/siteMetadata'
+import { getAllPosts } from '@/lib/blog'
 
-export const dynamic = 'force-static'
+export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = siteMetadata.siteUrl
+  const allBlogs = await getAllPosts()
 
   const blogRoutes = allBlogs
     .filter((post) => !post.draft)

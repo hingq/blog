@@ -10,7 +10,22 @@ services:
     restart: unless-stopped
     ports:
       - '3000:3000'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     env_file:
       - .env
     environment:
       NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      BLOG_INDEX_URL: http://host.docker.internal:9000/blog/blog-index.json
+      SEARCH_INDEX_URL: http://host.docker.internal:9000/blog/search.json
+      MINIO_ENDPOINT: http://host.docker.internal:9000
+      MINIO_REGION: us-east-1
+      MINIO_BUCKET: blog
+      MINIO_ACCESS_KEY_ID: minioadmin
+      MINIO_SECRET_ACCESS_KEY: minioadmin123
+      MINIO_BLOG_INDEX_KEY: blog-index.json
+      MINIO_SEARCH_INDEX_KEY: search.json
+      MINIO_PUBLIC_BASE_URL: ''
+      MINIO_FORCE_PATH_STYLE: 'true'

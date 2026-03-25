@@ -3,9 +3,7 @@ import path from 'path'
 import { slug } from 'github-slugger'
 import { escape } from 'pliny/utils/htmlEscaper.js'
 import siteMetadata from '../data/siteMetadata.js'
-import tagData from '../app/tag-data.json' with { type: 'json' }
-import { allBlogs } from '../.contentlayer/generated/index.mjs'
-import { sortPosts } from 'pliny/utils/contentlayer.js'
+import { getTagKeys, loadBlogIndexForBuild, sortPosts } from './blog-utils.mjs'
 
 const outputFolder = process.env.EXPORT ? 'out' : 'public'
 
@@ -46,8 +44,10 @@ async function generateRSS(config, allBlogs, page = 'feed.xml') {
   }
 
   if (publishPosts.length > 0) {
-    for (const tag of Object.keys(tagData)) {
-      const filteredPosts = allBlogs.filter((post) => post.tags.map((t) => slug(t)).includes(tag))
+    for (const tag of getTagKeys(publishPosts)) {
+      const filteredPosts = allBlogs.filter((post) =>
+        (post.tags || []).map((value) => slug(value)).includes(tag)
+      )
       const rss = generateRss(config, filteredPosts, `tags/${tag}/${page}`)
       const rssPath = path.join(outputFolder, 'tags', tag)
       mkdirSync(rssPath, { recursive: true })
@@ -56,8 +56,9 @@ async function generateRSS(config, allBlogs, page = 'feed.xml') {
   }
 }
 
-const rss = () => {
-  generateRSS(siteMetadata, allBlogs)
+const rss = async () => {
+  const allBlogs = await loadBlogIndexForBuild()
+  await generateRSS(siteMetadata, allBlogs)
   console.log('RSS feed generated...')
 }
 export default rss
