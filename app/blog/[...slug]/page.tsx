@@ -2,7 +2,7 @@ import 'css/prism.css'
 import 'katex/dist/katex.css'
 
 import { components } from '@/components/MDXComponents'
-import { MDXLayoutRenderer } from 'pliny/mdx-components'
+import MDXRenderer from '@/components/MDXRenderer'
 import PostSimple from '@/layouts/PostSimple'
 import PostLayout from '@/layouts/PostLayout'
 import PostBanner from '@/layouts/PostBanner'
@@ -101,7 +101,7 @@ export default async function Page(props: { params: Promise<{ slug: string[] }> 
         next={adjacent.next}
         prev={adjacent.prev}
       >
-        <MDXLayoutRenderer code={post.body.code} components={components} toc={post.toc} />
+        <MDXRenderer code={post.body.code} components={components} toc={post.toc} />
       </Layout>
     </>
   )

@@ -246,14 +246,6 @@ export async function loadBlogIndexFromEnv() {
   throw new Error('Blog source is not configured. Set MinIO runtime env vars or BLOG_INDEX_URL.')
 }
 
-export async function loadBlogIndexForBuild() {
-  try {
-    return await loadBlogIndexFromEnv()
-  } catch {
-    return compileLocalBlogPosts()
-  }
-}
-
 export function getTagKeys(posts) {
   return Array.from(
     new Set(posts.flatMap((post) => (post.tags || []).map((tag) => githubSlug(tag))))

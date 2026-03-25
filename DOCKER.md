@@ -7,8 +7,8 @@
 
   docker save -o blog-linux-amd64.tar blog:latest
   scp ./blog-linux-amd64.tar root@47.108.133.169:/blog
-  scp ./docker-compose.yml user@host:/path/to/target/
-  scp ./.env user@host:/path/to/target/
+  scp ./docker-compose.yml root@47.108.133.169:/blog
+  scp ./.env root@47.108.133.169:/blog
 
   登录服务器：
 
@@ -26,13 +26,6 @@
   docker compose down
   docker compose up -d --force-recreate nextjs
 
-  直接用 docker run 启动：
-
-  docker run -d \
-    --name blog \
-    --restart unless-stopped \
-    -p 3000:3000 \
-    blog:latest
 
   查看状态和日志：
 
@@ -43,14 +36,7 @@
 
   docker stop blog
   docker rm blog
-  docker run -d \
-    --name blog \
-    --restart unless-stopped \
-    --env-file .env \
-    -p 3000:3000 \
-    blog:latest
 
-  如果你想在服务器上继续用 docker-compose 启动，而不是 docker run：
 
   cd /path/to/target
   # docker-compose.yml 已固定使用宿主机本地地址，不受 .env 同名变量影响
