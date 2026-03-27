@@ -1,17 +1,106 @@
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 })
+const siteMetadata = require('./data/siteMetadata')
+const remoteImagePatterns = [
+  {
+    protocol: 'https',
+    hostname: 'picsum.photos',
+  },
+]
 
-// You might need to insert additional domains in script-src if you are using external services
+const defaultCspHosts = {
+  comments: ['giscus.app'],
+  analytics: ['analytics.umami.is'],
+  images: ['picsum.photos'],
+  runtimeContent: [],
+}
+
+const toCspHost = (value) => {
+  if (!value) {
+    return null
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    try {
+      return new URL(value).origin
+    } catch {
+      return null
+    }
+  }
+
+  if (value.includes('/')) {
+    return null
+  }
+
+  return value
+}
+
+const toCspHosts = (values) =>
+  values.map(toCspHost).filter((value) => Boolean(value))
+
+const appendCspHosts = (existing, values) => {
+  const next = new Set(existing)
+  values.forEach((value) => next.add(value))
+  return [...next]
+}
+
+const isCommentsEnabled = Boolean(siteMetadata.comments?.provider)
+const isUmamiEnabled = Boolean(siteMetadata.analytics?.umamiAnalytics?.umamiWebsiteId)
+
+const runtimeContentHosts = toCspHosts([
+  process.env.BLOG_INDEX_URL,
+  process.env.SEARCH_INDEX_URL,
+  process.env.MINIO_PUBLIC_BASE_URL,
+  process.env.MINIO_ENDPOINT,
+])
+
+const imageHosts = appendCspHosts(
+  defaultCspHosts.images,
+  toCspHosts(
+    [
+      ...remoteImagePatterns.map(
+        ({ protocol = 'https', hostname, port = '' }) =>
+          hostname ? `${protocol}://${hostname}${port ? `:${port}` : ''}` : null
+      ),
+      process.env.MINIO_PUBLIC_BASE_URL,
+      process.env.MINIO_ENDPOINT,
+    ].filter(Boolean)
+  )
+)
+
+const commentsHosts = isCommentsEnabled ? defaultCspHosts.comments : []
+const analyticsHosts = isUmamiEnabled
+  ? appendCspHosts(
+      defaultCspHosts.analytics,
+      toCspHosts([siteMetadata.analytics?.umamiAnalytics?.src])
+    )
+  : []
+const connectHosts = appendCspHosts(
+  ["'self'"],
+  [...runtimeContentHosts, ...commentsHosts, ...analyticsHosts]
+)
+const scriptHosts = appendCspHosts(["'self'", "'unsafe-eval'", "'unsafe-inline'"], [
+  ...commentsHosts,
+  ...analyticsHosts,
+])
+const frameHosts = commentsHosts
+const imgHosts = appendCspHosts(["'self'", 'blob:', 'data:'], imageHosts)
+
+// CSP maintenance notes:
+// 1) Comments: if comments.provider is enabled (giscus/utterances/disqus), add required domains below.
+// 2) Analytics: if a provider is enabled in siteMetadata.analytics, sync script/connect domains below.
+// 3) Remote images/object storage: when adding CDN/S3/MinIO domains, sync both `images.remotePatterns` and img-src.
+// 4) Runtime content endpoints (SEARCH_INDEX_URL/BLOG_INDEX_URL/MINIO_*): keep connect-src aligned with deployment env.
 const ContentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' giscus.app analytics.umami.is;
+  script-src ${scriptHosts.join(' ')};
   style-src 'self' 'unsafe-inline';
-  img-src * blob: data:;
+  img-src ${imgHosts.join(' ')};
   media-src *.s3.amazonaws.com;
-  connect-src *;
+  connect-src ${connectHosts.join(' ')};
   font-src 'self';
-  frame-src giscus.app
+  frame-src ${frameHosts.length > 0 ? frameHosts.join(' ') : "'none'"};
 `
 
 const securityHeaders = [
@@ -77,12 +166,7 @@ module.exports = () => {
     },
     pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
     images: {
-      remotePatterns: [
-        {
-          protocol: 'https',
-          hostname: 'picsum.photos',
-        },
-      ],
+      remotePatterns: remoteImagePatterns,
       unoptimized,
     },
     async headers() {
