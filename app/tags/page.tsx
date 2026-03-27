@@ -4,6 +4,7 @@ import { genPageMetadata } from 'app/seo'
 import { getTagCounts } from '@/lib/blog'
 
 export const metadata = genPageMetadata({ title: 'Tags', description: 'Things I blog about' })
+export const dynamic = 'force-dynamic'
 
 export default async function Page() {
   const tagCounts = await getTagCounts()
