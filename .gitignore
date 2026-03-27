@@ -47,3 +47,4 @@ tsconfig.tsbuildinfo
 # Contentlayer
 .contentlayer
 *.tar
+.env

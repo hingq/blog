@@ -38,6 +38,7 @@ export interface BlogPost {
 export type CoreBlogPost = Omit<BlogPost, 'body' | '_id' | '_raw'>
 
 const BLOG_INDEX_URL = process.env.BLOG_INDEX_URL
+const BLOG_POSTS_BASE_URL = process.env.BLOG_POSTS_BASE_URL
 const REVALIDATE_SECONDS = 60
 const isProduction = process.env.NODE_ENV === 'production'
 const isDevelopment = process.env.NODE_ENV !== 'production'
@@ -45,6 +46,7 @@ const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT
 const MINIO_REGION = process.env.MINIO_REGION || 'us-east-1'
 const MINIO_BUCKET = process.env.MINIO_BUCKET
 const MINIO_BLOG_INDEX_KEY = process.env.MINIO_BLOG_INDEX_KEY
+const MINIO_POSTS_PREFIX = process.env.MINIO_POSTS_PREFIX ?? 'posts/'
 const MINIO_ACCESS_KEY_ID = process.env.MINIO_ACCESS_KEY_ID
 const MINIO_SECRET_ACCESS_KEY = process.env.MINIO_SECRET_ACCESS_KEY
 const MINIO_FORCE_PATH_STYLE = process.env.MINIO_FORCE_PATH_STYLE !== 'false'
@@ -86,12 +88,12 @@ function createMinioClient() {
   })
 }
 
-function assertBlogPost(post: unknown, index: number): asserts post is BlogPost {
+function assertCorePost(post: unknown, index: number): asserts post is CoreBlogPost {
   if (!post || typeof post !== 'object') {
     throw new Error(`Invalid blog post at index ${index}: expected object`)
   }
 
-  const candidate = post as Partial<BlogPost>
+  const candidate = post as Partial<CoreBlogPost>
 
   if (
     typeof candidate.title !== 'string' ||
@@ -101,7 +103,12 @@ function assertBlogPost(post: unknown, index: number): asserts post is BlogPost 
   ) {
     throw new Error(`Invalid blog post at index ${index}: missing required fields`)
   }
+}
 
+function assertBlogPost(post: unknown, index: number): asserts post is BlogPost {
+  assertCorePost(post, index)
+
+  const candidate = post as Partial<BlogPost>
   if (!candidate.body || typeof candidate.body.code !== 'string') {
     throw new Error(`Invalid blog post at index ${index}: missing body.code`)
   }
@@ -115,21 +122,12 @@ function sortPosts<T extends { date: string }>(posts: T[]) {
   })
 }
 
-function corePost(post: BlogPost): CoreBlogPost {
-  const { body, _id, _raw, ...rest } = post
-  return rest
-}
-
 function filterDrafts<T extends { draft?: boolean }>(posts: T[]) {
   return isProduction ? posts.filter((post) => post.draft !== true) : posts
 }
 
-async function fetchBlogIndexFromMinio(): Promise<BlogPost[]> {
-  if (!hasMinioRuntimeConfig()) {
-    throw new Error('MinIO runtime config is incomplete')
-  }
-
-  logBlogSource('fetching private blog index from MinIO', `${MINIO_BUCKET}/${MINIO_BLOG_INDEX_KEY}`)
+async function fetchIndexFromMinio(): Promise<CoreBlogPost[]> {
+  logBlogSource('fetching blog index from MinIO', `${MINIO_BUCKET}/${MINIO_BLOG_INDEX_KEY}`)
   const client = createMinioClient()
   const response = await client.send(
     new GetObjectCommand({
@@ -137,7 +135,7 @@ async function fetchBlogIndexFromMinio(): Promise<BlogPost[]> {
       Key: MINIO_BLOG_INDEX_KEY,
     })
   )
-  logBlogSource('private blog index response', response.$metadata.httpStatusCode)
+  logBlogSource('blog index response', response.$metadata.httpStatusCode)
 
   if (!response.Body) {
     throw new Error('MinIO returned an empty blog index body')
@@ -150,20 +148,20 @@ async function fetchBlogIndexFromMinio(): Promise<BlogPost[]> {
     throw new Error('Invalid blog index payload: expected a top-level array')
   }
 
-  payload.forEach((post, index) => assertBlogPost(post, index))
+  payload.forEach((post, index) => assertCorePost(post, index))
   return payload
 }
 
-async function fetchBlogIndexFromPublicUrl(): Promise<BlogPost[]> {
+async function fetchIndexFromPublicUrl(): Promise<CoreBlogPost[]> {
   if (!BLOG_INDEX_URL) {
     throw new Error('BLOG_INDEX_URL is not configured')
   }
 
-  logBlogSource('fetching public blog index', BLOG_INDEX_URL)
+  logBlogSource('fetching blog index', BLOG_INDEX_URL)
   const response = await fetch(BLOG_INDEX_URL, {
     next: { revalidate: REVALIDATE_SECONDS },
   })
-  logBlogSource('public blog index response', response.status, response.statusText)
+  logBlogSource('blog index response', response.status, response.statusText)
 
   if (!response.ok) {
     throw new Error(`Failed to fetch blog index: ${response.status} ${response.statusText}`)
@@ -174,19 +172,56 @@ async function fetchBlogIndexFromPublicUrl(): Promise<BlogPost[]> {
     throw new Error('Invalid blog index payload: expected a top-level array')
   }
 
-  payload.forEach((post, index) => assertBlogPost(post, index))
+  payload.forEach((post, index) => assertCorePost(post, index))
   return payload
 }
 
-const loadBlogPosts = cache(async (): Promise<BlogPost[]> => {
+async function fetchPostFromMinio(postSlug: string): Promise<BlogPost> {
+  const key = `${MINIO_POSTS_PREFIX}${postSlug}.json`
+  logBlogSource('fetching post from MinIO', `${MINIO_BUCKET}/${key}`)
+  const client = createMinioClient()
+  const response = await client.send(new GetObjectCommand({ Bucket: MINIO_BUCKET, Key: key }))
+
+  if (!response.Body) {
+    throw new Error(`MinIO returned empty body for post: ${postSlug}`)
+  }
+
+  const raw = await response.Body.transformToString()
+  const post = JSON.parse(raw)
+  assertBlogPost(post, 0)
+  return post
+}
+
+async function fetchPostFromPublicUrl(postSlug: string): Promise<BlogPost> {
+  if (!BLOG_POSTS_BASE_URL) {
+    throw new Error('BLOG_POSTS_BASE_URL is not configured')
+  }
+
+  const base = BLOG_POSTS_BASE_URL.endsWith('/') ? BLOG_POSTS_BASE_URL : `${BLOG_POSTS_BASE_URL}/`
+  const url = `${base}${postSlug}.json`
+  logBlogSource('fetching post', url)
+  const response = await fetch(url, {
+    next: { revalidate: REVALIDATE_SECONDS },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch post ${postSlug}: ${response.status} ${response.statusText}`)
+  }
+
+  const post = await response.json()
+  assertBlogPost(post, 0)
+  return post
+}
+
+const loadPostIndex = cache(async (): Promise<CoreBlogPost[]> => {
   if (hasMinioRuntimeConfig()) {
-    logBlogSource('using private MinIO blog index source')
-    return fetchBlogIndexFromMinio()
+    logBlogSource('using MinIO blog index source')
+    return fetchIndexFromMinio()
   }
 
   if (BLOG_INDEX_URL) {
     logBlogSource('using public blog index source')
-    return fetchBlogIndexFromPublicUrl()
+    return fetchIndexFromPublicUrl()
   }
 
   const error = new Error(
@@ -196,19 +231,40 @@ const loadBlogPosts = cache(async (): Promise<BlogPost[]> => {
   throw error
 })
 
-export async function getAllPosts(): Promise<BlogPost[]> {
-  const posts = await loadBlogPosts()
+const loadPostBySlug = cache(async (postSlug: string): Promise<BlogPost | undefined> => {
+  try {
+    if (hasMinioRuntimeConfig()) {
+      logBlogSource('using MinIO post source')
+      return await fetchPostFromMinio(postSlug)
+    }
+
+    if (BLOG_POSTS_BASE_URL) {
+      logBlogSource('using public post source')
+      return await fetchPostFromPublicUrl(postSlug)
+    }
+
+    const error = new Error(
+      'Post source is not configured. Set MinIO runtime env vars or BLOG_POSTS_BASE_URL.'
+    )
+    warnBlogSource('missing post source configuration', error)
+    throw error
+  } catch (err) {
+    warnBlogSource(`failed to load post "${postSlug}"`, err)
+    return undefined
+  }
+})
+
+export async function getAllPosts(): Promise<CoreBlogPost[]> {
+  const posts = await loadPostIndex()
   return filterDrafts(sortPosts(posts))
 }
 
 export async function getAllCorePosts(): Promise<CoreBlogPost[]> {
-  const posts = await getAllPosts()
-  return posts.map(corePost)
+  return getAllPosts()
 }
 
-export async function getPostBySlug(slug: string): Promise<BlogPost | undefined> {
-  const posts = await getAllPosts()
-  return posts.find((post) => post.slug === slug)
+export async function getPostBySlug(postSlug: string): Promise<BlogPost | undefined> {
+  return loadPostBySlug(postSlug)
 }
 
 export async function getTagCounts(): Promise<Record<string, number>> {
@@ -224,17 +280,15 @@ export async function getTagCounts(): Promise<Record<string, number>> {
 
 export async function getPostsByTag(tag: string): Promise<CoreBlogPost[]> {
   const posts = await getAllPosts()
-  return posts
-    .filter((post) => (post.tags || []).some((postTag) => slug(postTag) === tag))
-    .map(corePost)
+  return posts.filter((post) => (post.tags || []).some((postTag) => slug(postTag) === tag))
 }
 
-export async function getAdjacentPosts(slug: string): Promise<{
+export async function getAdjacentPosts(postSlug: string): Promise<{
   prev?: CoreBlogPost
   next?: CoreBlogPost
 }> {
   const posts = await getAllCorePosts()
-  const index = posts.findIndex((post) => post.slug === slug)
+  const index = posts.findIndex((post) => post.slug === postSlug)
 
   if (index === -1) {
     return {}
