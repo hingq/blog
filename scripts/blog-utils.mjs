@@ -111,7 +111,7 @@ async function getMdxFiles(dir) {
     })
   )
 
-  return files.flat().filter((file) => file.endsWith('.mdx'))
+  return files.flat().filter((file) => file.endsWith('.md') || file.endsWith('.mdx'))
 }
 
 async function compileMdx(source) {
@@ -158,13 +158,23 @@ function getPrimaryImage(images) {
 
 export async function compileLocalBlogPosts() {
   const files = await getMdxFiles(blogDir)
+  const seenPaths = new Map()
 
   return Promise.all(
     files.map(async (file) => {
       const source = await readFile(file, 'utf8')
       const { data, content } = matter(source)
       const sourceFilePath = path.relative(path.join(projectRoot, 'data'), file).replace(/\\/g, '/')
-      const flattenedPath = sourceFilePath.replace(/\.mdx$/, '')
+      const flattenedPath = sourceFilePath.replace(/\.mdx?$/, '')
+      const duplicatePath = seenPaths.get(flattenedPath)
+
+      if (duplicatePath) {
+        throw new Error(
+          `Duplicate blog path "${flattenedPath}" from "${duplicatePath}" and "${sourceFilePath}"`
+        )
+      }
+
+      seenPaths.set(flattenedPath, sourceFilePath)
 
       return {
         title: data.title,
