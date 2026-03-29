@@ -111,7 +111,7 @@ async function getMdxFiles(dir) {
     })
   )
 
-  return files.flat().filter((file) => file.endsWith('.md') || file.endsWith('.mdx'))
+  return files.flat().filter((file) => file.endsWith('.mdx'))
 }
 
 async function compileMdx(source) {
@@ -164,7 +164,7 @@ export async function compileLocalBlogPosts() {
       const source = await readFile(file, 'utf8')
       const { data, content } = matter(source)
       const sourceFilePath = path.relative(path.join(projectRoot, 'data'), file).replace(/\\/g, '/')
-      const flattenedPath = sourceFilePath.replace(/\.mdx?$/, '')
+      const flattenedPath = sourceFilePath.replace(/\.mdx$/, '')
 
       return {
         title: data.title,

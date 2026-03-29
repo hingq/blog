@@ -189,6 +189,10 @@ npx degit 'timlrx/tailwind-nextjs-starter-blog'
 7. Add blog posts
 8. Deploy on Vercel
 
+## Contributing
+
+This project uses the Next.js **App Router** (`app/` directory). When updating lint commands or CI checks, do **not** add legacy `pages/` directory flags (for example `--dir pages`).
+
 ## Installation
 
 ```bash
