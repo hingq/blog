@@ -48,11 +48,14 @@ export async function generateMetadata(props: {
   return {
     title: post.title,
     description: post.summary,
+    alternates: {
+      canonical: './',
+    },
     openGraph: {
       title: post.title,
       description: post.summary,
       siteName: siteMetadata.title,
-      locale: 'en_US',
+      locale: siteMetadata.locale,
       type: 'article',
       publishedTime: publishedAt,
       modifiedTime: modifiedAt,
