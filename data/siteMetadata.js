@@ -6,7 +6,7 @@ const siteMetadata = {
   description: '一川烟雨，满城风絮，梅子黄时雨',
   language: 'zh-cn',
   theme: 'system', // system, dark or light
-  siteUrl: 'https://tailwind-nextjs-starter-blog.vercel.app',
+  siteUrl: 'https://fortunately.top',
   siteRepo: 'https://github.com/timlrx/tailwind-nextjs-starter-blog',
   siteLogo: `${process.env.BASE_PATH || ''}/static/images/logo.png`,
   socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,
@@ -22,13 +22,12 @@ const siteMetadata = {
   // instagram: 'https://www.instagram.com',
   // medium: 'https://medium.com',
   // bluesky: 'https://bsky.app/',
-  locale: 'zh-cn',
+  locale: 'zh_CN',
   // set to true if you want a navbar fixed to the top
   stickyNav: true,
   analytics: {
     // If you want to use an analytics provider you have to add it to the
     // content security policy in the `next.config.js` file.
-    // If you add third-party analytics domains (script API / ingest API), sync CSP script-src + connect-src.
     // supports Plausible, Simple Analytics, Umami, Posthog or Google Analytics.
     umamiAnalytics: {
       // We use an env variable for this site to avoid other users cloning our analytics ID
@@ -58,7 +57,6 @@ const siteMetadata = {
   comments: {
     // If you want to use an analytics provider you have to add it to the
     // content security policy in the `next.config.js` file.
-    // If you switch comments provider or add a custom domain, sync CSP script-src / frame-src / connect-src.
     // Select a provider and use the environment variables associated to it
     // https://vercel.com/docs/environment-variables
     provider: 'giscus', // supported providers: giscus, utterances, disqus
@@ -91,7 +89,6 @@ const siteMetadata = {
     kbarConfig: {
       searchDocumentsPath:
         process.env.SEARCH_INDEX_URL || `${process.env.BASE_PATH || ''}/search.json`, // path to load documents to search
-      // If this points to a remote object storage or CDN URL, sync CSP connect-src (and img-src if image assets are served from same host).
     },
     // provider: 'algolia',
     // algoliaConfig: {

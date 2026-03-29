@@ -92,9 +92,7 @@ async function uploadJson(client, bucket, key, payload) {
 
 async function loadManifest(client, bucket, manifestKey) {
   try {
-    const response = await client.send(
-      new GetObjectCommand({ Bucket: bucket, Key: manifestKey })
-    )
+    const response = await client.send(new GetObjectCommand({ Bucket: bucket, Key: manifestKey }))
     if (!response.Body) return null
     const raw = await response.Body.transformToString()
     return JSON.parse(raw)
@@ -163,9 +161,7 @@ async function main() {
     uploadedCount++
   }
 
-  console.log(
-    `[content-publish] Posts: ${uploadedCount} uploaded, ${skippedCount} unchanged`
-  )
+  console.log(`[content-publish] Posts: ${uploadedCount} uploaded, ${skippedCount} unchanged`)
 
   // Upload lightweight index (no body)
   logStep('Checking blog index (lightweight)')

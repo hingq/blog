@@ -36,8 +36,7 @@ const toCspHost = (value) => {
   return value
 }
 
-const toCspHosts = (values) =>
-  values.map(toCspHost).filter((value) => Boolean(value))
+const toCspHosts = (values) => values.map(toCspHost).filter((value) => Boolean(value))
 
 const appendCspHosts = (existing, values) => {
   const next = new Set(existing)
@@ -59,9 +58,8 @@ const imageHosts = appendCspHosts(
   defaultCspHosts.images,
   toCspHosts(
     [
-      ...remoteImagePatterns.map(
-        ({ protocol = 'https', hostname, port = '' }) =>
-          hostname ? `${protocol}://${hostname}${port ? `:${port}` : ''}` : null
+      ...remoteImagePatterns.map(({ protocol = 'https', hostname, port = '' }) =>
+        hostname ? `${protocol}://${hostname}${port ? `:${port}` : ''}` : null
       ),
       process.env.MINIO_PUBLIC_BASE_URL,
       process.env.MINIO_ENDPOINT,
@@ -80,10 +78,10 @@ const connectHosts = appendCspHosts(
   ["'self'"],
   [...runtimeContentHosts, ...commentsHosts, ...analyticsHosts]
 )
-const scriptHosts = appendCspHosts(["'self'", "'unsafe-eval'", "'unsafe-inline'"], [
-  ...commentsHosts,
-  ...analyticsHosts,
-])
+const scriptHosts = appendCspHosts(
+  ["'self'", "'unsafe-eval'", "'unsafe-inline'"],
+  [...commentsHosts, ...analyticsHosts]
+)
 const frameHosts = commentsHosts
 const imgHosts = appendCspHosts(["'self'", 'blob:', 'data:'], imageHosts)
 
