@@ -1,3 +1,5 @@
+    "https:\/\/docker.m.daocloud.io"
+
 ```sh
 
   本地重新构建新镜像：
