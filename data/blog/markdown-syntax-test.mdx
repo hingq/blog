@@ -1,0 +1,216 @@
+---
+title: Markdown 与 MDX 语法测试文章
+date: '2026-03-29'
+tags: ['Markdown', 'MDX', 'Test']
+draft: false
+summary: '这是一篇用于测试当前博客支持的 Markdown 与 MDX 语法的文章，覆盖标题、列表、引用、表格、代码块、数学公式、任务列表、图片、脚注、GitHub Alerts 和 MDX 组件。'
+---
+
+# Markdown 与 MDX 语法测试文章
+
+这篇文章专门用于测试当前博客中已经启用的 Markdown 与 MDX 能力。
+
+如果某个区块渲染异常，通常就说明对应语法、插件或样式存在问题。
+
+{Array.isArray(props.toc) && props.toc.length > 0 && (
+  <TOCInline toc={props.toc} asDisclosure />
+)}
+
+## 标题层级
+
+### 三级标题
+
+#### 四级标题
+
+##### 五级标题
+
+###### 六级标题
+
+## 行内样式
+
+这里包含常见的行内语法：**粗体**、*斜体*、~~删除线~~、`行内代码`。
+
+也可以测试组合写法，例如 **粗体里带 `code`**，或者使用快捷键表示法 <kbd>Cmd</kbd> + <kbd>K</kbd>。
+
+## 段落与换行
+
+这是第一段文字，用于测试正常段落间距。
+
+这是第二段文字，用于确认段落之间是否存在合适的留白。
+
+这一行末尾带两个空格。  
+所以这里应该是同一段里的强制换行。
+
+## 引用
+
+> 这是标准引用块。
+>
+> 它可以包含多行内容，也可以包含 **强调** 和 `代码`。
+
+> 引用里也可以继续写列表：
+>
+> - 第一项
+> - 第二项
+
+## GitHub Alerts
+
+> [!NOTE]
+> 这是一个 `NOTE` 提示块，用于测试 `remark-github-blockquote-alert`。
+
+> [!TIP]
+> 这是一个 `TIP` 提示块，适合放最佳实践。
+
+> [!IMPORTANT]
+> 这是一个 `IMPORTANT` 提示块，用于强调关键结论。
+
+> [!WARNING]
+> 这是一个 `WARNING` 提示块，用于提醒潜在风险。
+
+> [!CAUTION]
+> 这是一个 `CAUTION` 提示块，用于强调高风险操作。
+
+## 列表
+
+无序列表：
+
+- 苹果
+- 香蕉
+- 橙子
+
+有序列表：
+
+1. 第一步
+2. 第二步
+3. 第三步
+
+嵌套列表示例：
+
+- 一级项目 A
+  - 二级项目 A-1
+  - 二级项目 A-2
+- 一级项目 B
+  1. 二级编号 B-1
+  2. 二级编号 B-2
+
+## 任务列表
+
+- [x] 已完成任务
+- [ ] 未完成任务
+- [x] 再补一个已完成任务
+
+## 链接
+
+普通链接：[OpenAI](https://openai.com)
+
+站内相对链接：[博客列表](/blog)
+
+自动识别的裸链接通常也应可点击：
+https://example.com/docs/markdown-test
+
+## 图片
+
+下面这张图片用于测试 Markdown 图片语法是否会被正确转换和渲染：
+
+<Image src="/static/images/ocean.jpeg" alt="测试图片" width={1200} height={800} />
+
+## 分隔线
+
+---
+
+## 表格
+
+| 语法 | 示例 | 说明 |
+| --- | --- | --- |
+| 粗体 | `**text**` | 测试强调样式 |
+| 行内代码 | `` `code` `` | 测试代码字体 |
+| 删除线 | `~~text~~` | 测试 GFM 语法 |
+
+## 脚注
+
+这里有一个脚注示例。[^footnote-demo]
+
+这里再引用一次同一个脚注。[^footnote-demo]
+
+[^footnote-demo]: 这是脚注内容，用于测试脚注编号、跳转和样式。
+
+## 数学公式
+
+行内公式示例：$E = mc^2$
+
+块级公式示例：
+
+$$
+\int_{0}^{1} x^2 \, dx = \frac{1}{3}
+$$
+
+再补一个常见公式：
+
+$$
+f(x) = \sum_{i=1}^{n} x_i^2
+$$
+
+## 代码块
+
+```bash
+pnpm install
+yarn dev
+```
+
+```js
+function greet(name) {
+  return `hello, ${name}`
+}
+
+console.log(greet('markdown'))
+```
+
+```tsx
+type ButtonProps = {
+  children: React.ReactNode
+}
+
+export default function Button({ children }: ButtonProps) {
+  return <button className="rounded bg-slate-900 px-3 py-2 text-white">{children}</button>
+}
+```
+
+```json
+{
+  "name": "markdown-syntax-test",
+  "draft": false,
+  "features": ["gfm", "math", "alerts", "mdx"]
+}
+```
+
+```diff
+- const oldValue = true
++ const oldValue = false
+```
+
+## HTML / JSX 片段
+
+<details>
+  <summary>点击展开细节内容</summary>
+  <p>这个区域用于测试在 MDX 中嵌入 HTML / JSX 结构是否正常。</p>
+</details>
+
+## MDX 组件
+
+这里直接测试项目里注册过的 MDX 组件。
+
+{Array.isArray(props.toc) && props.toc.length > 0 && (
+  <TOCInline toc={props.toc} asDisclosure />
+)}
+
+## 总结
+
+如果这篇文章中的以下内容都能正常渲染，说明当前博客的 Markdown / MDX 基础能力大体正常：
+
+- 标题与目录锚点
+- 行内样式与段落排版
+- GFM 列表、任务列表、表格、脚注
+- 图片与链接
+- 代码块高亮
+- 数学公式
+- GitHub Alerts
+- MDX JSX 和自定义组件

@@ -192,7 +192,7 @@ export async function compileLocalBlogPosts() {
         slug: flattenedPath.replace(/^.+?\//, ''),
         path: flattenedPath,
         filePath: sourceFilePath,
-        toc: extractTocHeadings(content),
+        toc: await extractTocHeadings(content),
         structuredData: {
           '@context': 'https://schema.org',
           '@type': 'BlogPosting',

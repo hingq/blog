@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { slug } from 'github-slugger'
+import { extractTocHeadings } from 'pliny/mdx-plugins/index.js'
 
 export interface BlogPostBody {
   code: string
@@ -114,6 +115,24 @@ function assertBlogPost(post: unknown, index: number): asserts post is BlogPost 
   }
 }
 
+async function normalizePostToc(post: BlogPost): Promise<BlogPost> {
+  if (Array.isArray(post.toc)) {
+    return post
+  }
+
+  if (typeof post.body?.raw !== 'string') {
+    return { ...post, toc: [] }
+  }
+
+  try {
+    const toc = await extractTocHeadings(post.body.raw)
+    return { ...post, toc: Array.isArray(toc) ? toc : [] }
+  } catch (error) {
+    warnBlogSource(`failed to rebuild toc for post "${post.slug}"`, error)
+    return { ...post, toc: [] }
+  }
+}
+
 function sortPosts<T extends { date: string }>(posts: T[]) {
   return [...posts].sort((a, b) => {
     if (a.date > b.date) return -1
@@ -189,7 +208,7 @@ async function fetchPostFromMinio(postSlug: string): Promise<BlogPost> {
   const raw = await response.Body.transformToString()
   const post = JSON.parse(raw)
   assertBlogPost(post, 0)
-  return post
+  return normalizePostToc(post)
 }
 
 async function fetchPostFromPublicUrl(postSlug: string): Promise<BlogPost> {
@@ -210,7 +229,7 @@ async function fetchPostFromPublicUrl(postSlug: string): Promise<BlogPost> {
 
   const post = await response.json()
   assertBlogPost(post, 0)
-  return post
+  return normalizePostToc(post)
 }
 
 const loadPostIndex = cache(async (): Promise<CoreBlogPost[]> => {
