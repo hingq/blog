@@ -70,6 +70,7 @@
    - `DEPLOY_USER`
    - `DEPLOY_PASSWORD`
    - `DEPLOY_PORT`（可选）
+   - `DEPLOY_ENV_FILE`（可选，优先用于生成上传 `.env`）
 3. 给该 Environment 开启保护策略：
    - Required reviewers（发布前人工审批）
    - Restrict branches（只允许 `main`）
@@ -78,7 +79,7 @@
 
 > 注意：GitHub Secrets 在日志中会自动做脱敏，但如果你主动 `echo` 明文变量，仍有泄露风险。
 
-> 说明：当前工作流会将仓库根目录的 `.env` 文件一并上传到服务器 `/blog`。
+> 说明：当前工作流会上传 `.env` 到服务器 `/blog`。若配置了 `DEPLOY_ENV_FILE`，将优先使用该 Secret 生成 `.env`；否则使用仓库根目录现有 `.env`。
 
 
 ### 在哪里配置（是的，要在 GitHub 仓库里配置）
@@ -91,6 +92,7 @@
    - `DEPLOY_USER`
    - `DEPLOY_PASSWORD`（或 `DEPLOY_SSH_KEY`）
    - `DEPLOY_PORT`（可选）
+   - `DEPLOY_ENV_FILE`（可选）
 3. 在 `blog` 的保护规则中设置：
    - `Required reviewers`
    - `Deployment branches` 仅 `main`

@@ -37,10 +37,13 @@ jobs:
             exit 1
           fi
 
-      - name: Validate local env file
+      - name: Prepare env file for upload
         run: |
+          if [ -n "${{ secrets.DEPLOY_ENV_FILE }}" ]; then
+            printf '%s' "${{ secrets.DEPLOY_ENV_FILE }}" > .env
+          fi
           if [ ! -f .env ]; then
-            echo ".env file is required in repository root for deployment."
+            echo "No .env found. Add repository .env file or set DEPLOY_ENV_FILE secret in Environment: blog."
             exit 1
           fi
 
