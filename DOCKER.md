@@ -70,7 +70,6 @@
    - `DEPLOY_USER`
    - `DEPLOY_PASSWORD`
    - `DEPLOY_PORT`（可选）
-   - `DEPLOY_ENV_FILE`（可选）
 3. 给该 Environment 开启保护策略：
    - Required reviewers（发布前人工审批）
    - Restrict branches（只允许 `main`）
@@ -78,6 +77,8 @@
 5. 若条件允许，长期建议改成 SSH Key（可撤销、可分账号管理、审计更清晰）。
 
 > 注意：GitHub Secrets 在日志中会自动做脱敏，但如果你主动 `echo` 明文变量，仍有泄露风险。
+
+> 说明：当前工作流不再从 GitHub Secret 下发 `.env` 文件，默认使用服务器已有 `.env`。
 
 
 ### 在哪里配置（是的，要在 GitHub 仓库里配置）
@@ -90,7 +91,6 @@
    - `DEPLOY_USER`
    - `DEPLOY_PASSWORD`（或 `DEPLOY_SSH_KEY`）
    - `DEPLOY_PORT`（可选）
-   - `DEPLOY_ENV_FILE`（可选）
 3. 在 `production` 的保护规则中设置：
    - `Required reviewers`
    - `Deployment branches` 仅 `main`

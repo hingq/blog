@@ -17,8 +17,6 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     environment: production
-    env:
-      DEPLOY_ENV_FILE: ${{ secrets.DEPLOY_ENV_FILE }}
 
     steps:
       - name: Checkout
@@ -32,11 +30,6 @@ jobs:
 
       - name: Save image as tar package
         run: docker save -o "${IMAGE_TAR}" "${IMAGE_NAME}:${IMAGE_TAG}"
-
-      - name: Prepare env file (optional)
-        if: ${{ env.DEPLOY_ENV_FILE != '' }}
-        run: |
-          printf '%s' "$DEPLOY_ENV_FILE" > .deploy.env
 
       - name: Validate deploy secrets
         run: |
@@ -61,18 +54,6 @@ jobs:
           source: "${{ env.IMAGE_TAR }},docker-compose.yml"
           target: ${{ env.REMOTE_DIR }}
 
-      - name: Upload env file to server (optional)
-        if: ${{ env.DEPLOY_ENV_FILE != '' }}
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          source: ".deploy.env"
-          target: ${{ env.REMOTE_DIR }}
-
       - name: Deploy on server
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -84,9 +65,6 @@ jobs:
           script: |
             set -e
             cd "${{ env.REMOTE_DIR }}"
-            if [ -f .deploy.env ]; then
-              mv -f .deploy.env .env
-            fi
             docker load -i "${{ env.IMAGE_TAR }}"
             docker compose down
             docker compose up -d --force-recreate nextjs
