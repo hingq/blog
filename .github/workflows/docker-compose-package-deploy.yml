@@ -17,6 +17,8 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     environment: production
+    env:
+      DEPLOY_ENV_FILE: ${{ secrets.DEPLOY_ENV_FILE }}
 
     steps:
       - name: Checkout
@@ -32,10 +34,10 @@ jobs:
         run: docker save -o "${IMAGE_TAR}" "${IMAGE_NAME}:${IMAGE_TAG}"
 
       - name: Prepare env file (optional)
-        if: ${{ secrets.DEPLOY_ENV_FILE != '' }}
+        if: ${{ env.DEPLOY_ENV_FILE != '' }}
         run: |
           cat > .deploy.env <<'EOF'
-          ${{ secrets.DEPLOY_ENV_FILE }}
+          ${{ env.DEPLOY_ENV_FILE }}
           EOF
 
       - name: Validate deploy secrets
@@ -62,7 +64,7 @@ jobs:
           target: ${{ env.REMOTE_DIR }}
 
       - name: Upload env file to server (optional)
-        if: ${{ secrets.DEPLOY_ENV_FILE != '' }}
+        if: ${{ env.DEPLOY_ENV_FILE != '' }}
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DEPLOY_HOST }}
