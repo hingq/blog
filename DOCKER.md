@@ -64,7 +64,7 @@
 
 如果你使用 `DEPLOY_PASSWORD`（而不是 SSH Key），建议按下面方式配置，避免明文泄露：
 
-1. 在 GitHub 仓库中创建 **Environment**（例如 `production`）。
+1. 在 GitHub 仓库中创建 **Environment**（名称使用 `blog`）。
 2. 将以下敏感信息放到 **Environment secrets**（不要放到代码仓库、不要写进 workflow 文件）：
    - `DEPLOY_HOST`
    - `DEPLOY_USER`
@@ -78,22 +78,23 @@
 
 > 注意：GitHub Secrets 在日志中会自动做脱敏，但如果你主动 `echo` 明文变量，仍有泄露风险。
 
-> 说明：当前工作流不再从 GitHub Secret 下发 `.env` 文件，默认使用服务器已有 `.env`。
+> 说明：当前工作流会将仓库根目录的 `.env` 文件一并上传到服务器 `/blog`。
 
 
 ### 在哪里配置（是的，要在 GitHub 仓库里配置）
 
 进入你的仓库页面后按下面路径操作：
 
-1. `Settings` → `Environments` → 新建 `production`。
-2. 进入 `production` → `Environment secrets` → `Add secret`，依次添加：
+1. `Settings` → `Environments` → 新建 `blog`。
+2. 进入 `blog` → `Environment secrets` → `Add secret`，依次添加：
    - `DEPLOY_HOST`
    - `DEPLOY_USER`
    - `DEPLOY_PASSWORD`（或 `DEPLOY_SSH_KEY`）
    - `DEPLOY_PORT`（可选）
-3. 在 `production` 的保护规则中设置：
+3. 在 `blog` 的保护规则中设置：
    - `Required reviewers`
    - `Deployment branches` 仅 `main`
 
 如果你不使用 Environment，也可以放在仓库级 `Settings` → `Secrets and variables` → `Actions`，
 但不如 Environment 安全、可控。
+
