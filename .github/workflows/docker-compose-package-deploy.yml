@@ -47,6 +47,11 @@ jobs:
             exit 1
           fi
 
+      - name: Normalize artifact permissions
+        run: |
+          sudo chown "$USER:$USER" blog-linux-amd64.tar docker-compose.yml .env || true
+          chmod 644 blog-linux-amd64.tar docker-compose.yml .env
+
       - name: Upload tar and compose file to server
         uses: appleboy/scp-action@v0.1.7
         with:
