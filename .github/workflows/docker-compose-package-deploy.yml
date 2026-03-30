@@ -36,9 +36,7 @@ jobs:
       - name: Prepare env file (optional)
         if: ${{ env.DEPLOY_ENV_FILE != '' }}
         run: |
-          cat > .deploy.env <<'EOF'
-          ${{ env.DEPLOY_ENV_FILE }}
-          EOF
+          printf '%s' "$DEPLOY_ENV_FILE" > .deploy.env
 
       - name: Validate deploy secrets
         run: |
