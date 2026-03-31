@@ -20,6 +20,7 @@ services:
       PORT: 3000
       BLOG_INDEX_URL: http://host.docker.internal:9000/blog/blog-index.json
       SEARCH_INDEX_URL: http://host.docker.internal:9000/blog/search.json
+      CSP_CONNECT_SRC_EXTRA: http://host.docker.internal:9000
       MINIO_ENDPOINT: http://host.docker.internal:9000
       MINIO_REGION: us-east-1
       MINIO_BUCKET: blog
