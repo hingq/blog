@@ -306,6 +306,20 @@ The easiest way to deploy the template is to deploy on [Vercel](https://vercel.c
 
 See [Next.js on Netlify](https://docs.netlify.com/integrations/frameworks/next-js/overview/#next-js-runtime) for suggested configuration values and more details.
 
+### Docker / prebuilt image deployment
+
+If you publish prebuilt images (build once, deploy many), configure both endpoint vars and CSP fallback vars at runtime:
+
+- `SEARCH_INDEX_URL` / `BLOG_INDEX_URL`: data endpoint URLs used by the app to fetch search/blog index JSON.
+- `CSP_CONNECT_SRC_EXTRA`: explicit `connect-src` allowlist fallback for runtime-only origins (comma-separated, e.g. `http://host.docker.internal:9000,https://api.example.com`).
+
+Why both are needed:
+
+- Endpoint vars decide **where to fetch data from**.
+- `CSP_CONNECT_SRC_EXTRA` decides **which origins CSP allows the browser to connect to**, even when those endpoint vars were absent at image build time.
+
+This avoids runtime CSP mismatches when environment variables differ between build and deploy stages.
+
 ### Static hosting services (GitHub Pages / S3 / Firebase etc.)
 
 Run:

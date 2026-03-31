@@ -36,7 +36,13 @@ const toCspHost = (value) => {
   return value
 }
 
-const toCspHosts = (values) => values.map(toCspHost).filter((value) => Boolean(value))
+const toCspHosts = (values) =>
+  values
+    .flatMap((value) => String(value || '').split(','))
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map(toCspHost)
+    .filter((value) => Boolean(value))
 
 const appendCspHosts = (existing, values) => {
   const next = new Set(existing)
@@ -52,6 +58,7 @@ const runtimeContentHosts = toCspHosts([
   process.env.SEARCH_INDEX_URL,
   process.env.MINIO_PUBLIC_BASE_URL,
   process.env.MINIO_ENDPOINT,
+  process.env.CSP_CONNECT_SRC_EXTRA,
 ])
 
 const imageHosts = appendCspHosts(
@@ -89,7 +96,8 @@ const imgHosts = appendCspHosts(["'self'", 'blob:', 'data:'], imageHosts)
 // 1) Comments: if comments.provider is enabled (giscus/utterances/disqus), add required domains below.
 // 2) Analytics: if a provider is enabled in siteMetadata.analytics, sync script/connect domains below.
 // 3) Remote images/object storage: when adding CDN/S3/MinIO domains, sync both `images.remotePatterns` and img-src.
-// 4) Runtime content endpoints (SEARCH_INDEX_URL/BLOG_INDEX_URL/MINIO_*): keep connect-src aligned with deployment env.
+// 4) Runtime content endpoints (SEARCH_INDEX_URL/BLOG_INDEX_URL/MINIO_*) and CSP_CONNECT_SRC_EXTRA:
+//    keep connect-src aligned with deployment env.
 const ContentSecurityPolicy = `
   default-src 'self';
   script-src ${scriptHosts.join(' ')};
