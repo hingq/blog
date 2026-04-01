@@ -84,7 +84,10 @@ const siteMetadata = {
   search: {
     provider: 'kbar', // kbar or algolia
     kbarConfig: {
-      searchDocumentsPath: `${process.env.BASE_PATH || ''}/api/search-documents`, // 同源入口；跨域索引通过服务端代理
+      searchDocumentsPath:
+        Boolean(process.env.EXPORT)
+          ? `${process.env.BASE_PATH || ''}/search.json`
+          : `${process.env.BASE_PATH || ''}/api/search-documents`, // 静态导出使用本地索引；非静态导出（dev/standalone）通过同源入口代理跨域索引
     },
     // provider: 'algolia',
     // algoliaConfig: {
