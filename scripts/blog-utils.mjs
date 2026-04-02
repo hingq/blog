@@ -83,6 +83,15 @@ export function toCoreContent(post) {
   return rest
 }
 
+export function toSearchDocument(post) {
+  const coreContent = toCoreContent(post)
+
+  return {
+    ...coreContent,
+    date: typeof coreContent.date === 'string' ? coreContent.date.slice(0, 10) : coreContent.date,
+  }
+}
+
 export function assertCompiledPost(post, index) {
   if (!post || typeof post !== 'object') {
     throw new Error(`Invalid compiled blog post at index ${index}: expected object`)

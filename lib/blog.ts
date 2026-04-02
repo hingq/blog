@@ -2,6 +2,11 @@ import { cache } from 'react'
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { slug } from 'github-slugger'
 import { extractTocHeadings } from 'pliny/mdx-plugins/index.js'
+import {
+  createMinioClient as createSharedMinioClient,
+  getRuntimeContentSource,
+  hasMinioObjectConfig,
+} from '@/lib/runtime-content-source.mjs'
 
 export interface BlogPostBody {
   code: string
@@ -64,13 +69,7 @@ function warnBlogSource(message: string, error: unknown) {
 }
 
 function hasMinioRuntimeConfig() {
-  return Boolean(
-    MINIO_ENDPOINT &&
-    MINIO_BUCKET &&
-    MINIO_BLOG_INDEX_KEY &&
-    MINIO_ACCESS_KEY_ID &&
-    MINIO_SECRET_ACCESS_KEY
-  )
+  return hasMinioObjectConfig({ minioKeyEnvName: 'MINIO_BLOG_INDEX_KEY' })
 }
 
 function createMinioClient() {
@@ -78,15 +77,7 @@ function createMinioClient() {
     throw new Error('MinIO runtime config is incomplete')
   }
 
-  return new S3Client({
-    endpoint: MINIO_ENDPOINT,
-    region: MINIO_REGION,
-    forcePathStyle: MINIO_FORCE_PATH_STYLE,
-    credentials: {
-      accessKeyId: MINIO_ACCESS_KEY_ID!,
-      secretAccessKey: MINIO_SECRET_ACCESS_KEY!,
-    },
-  })
+  return createSharedMinioClient(process.env) as S3Client
 }
 
 function assertCorePost(post: unknown, index: number): asserts post is CoreBlogPost {
@@ -233,12 +224,17 @@ async function fetchPostFromPublicUrl(postSlug: string): Promise<BlogPost> {
 }
 
 const loadPostIndex = cache(async (): Promise<CoreBlogPost[]> => {
-  if (hasMinioRuntimeConfig()) {
+  const blogIndexSource = getRuntimeContentSource({
+    remoteUrlEnvName: 'BLOG_INDEX_URL',
+    minioKeyEnvName: 'MINIO_BLOG_INDEX_KEY',
+  })
+
+  if (blogIndexSource === 'minio') {
     logBlogSource('using MinIO blog index source')
     return fetchIndexFromMinio()
   }
 
-  if (BLOG_INDEX_URL) {
+  if (blogIndexSource === 'remote') {
     logBlogSource('using public blog index source')
     return fetchIndexFromPublicUrl()
   }

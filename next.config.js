@@ -10,7 +10,7 @@ const remoteImagePatterns = [
 ]
 
 const defaultCspHosts = {
-  comments: ['giscus.app'],
+  comments: ['comment.fortunately.top'],
   analytics: ['analytics.umami.is'],
   images: ['picsum.photos'],
   runtimeContent: [],
@@ -89,7 +89,11 @@ const scriptHosts = appendCspHosts(
   ["'self'", "'unsafe-eval'", "'unsafe-inline'"],
   [...commentsHosts, ...analyticsHosts]
 )
-const frameHosts = commentsHosts
+const iframeBasedProvider =
+  siteMetadata.comments?.provider === 'giscus' ||
+  siteMetadata.comments?.provider === 'utterances' ||
+  siteMetadata.comments?.provider === 'disqus'
+const frameHosts = iframeBasedProvider ? commentsHosts : []
 const imgHosts = appendCspHosts(["'self'", 'blob:', 'data:'], imageHosts)
 
 // CSP maintenance notes:

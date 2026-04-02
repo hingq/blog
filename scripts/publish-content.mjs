@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import nextEnv from '@next/env'
-import { compileLocalBlogPosts, sortPosts, toCoreContent } from './blog-utils.mjs'
+import { compileLocalBlogPosts, sortPosts, toCoreContent, toSearchDocument } from './blog-utils.mjs'
 
 const args = new Set(process.argv.slice(2))
 const { loadEnvConfig } = nextEnv
@@ -105,7 +105,7 @@ async function main() {
   logStep('Compiling blog content from data/blog')
   const publishedPosts = await loadCompiledPosts()
   const coreIndex = publishedPosts.map(toCoreContent)
-  const searchIndex = coreIndex
+  const searchIndex = publishedPosts.map(toSearchDocument)
 
   console.log(`[content-publish] Published posts: ${publishedPosts.length}`)
 

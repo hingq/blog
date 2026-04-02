@@ -1,0 +1,200 @@
+---
+title: 'Docker'
+date: '2026-04-01'
+tags: ['Docker']
+draft: false
+summary: '梳理 Docker 的核心概念、Dockerfile 的作用、Docker Compose 的使用。'
+---
+
+# Docker 入门
+
+这段时间一直在用docker，回顾了一些docker的相关知识。
+
+## 什么是 Docker
+
+Docker 可以理解为一种更轻量的应用交付方式。
+
+在传统开发里，经常会遇到这样的问题：代码在我的电脑上能跑，换一台机器就不行；依赖版本不一致，环境变量缺失，系统库不同，都会让部署过程变得不稳定。Docker 的核心价值，就是把应用运行所需的环境一起打包起来，让它在不同机器上的表现尽量保持一致。
+
+对开发者来说，Docker 主要解决三类问题：
+
+1. 统一开发、测试和生产环境。
+2. 让应用部署和迁移更容易。
+3. 用更低的成本启动隔离的运行环境。
+
+Docker 里的两个基础概念要先分清：
+
+- `镜像（Image）` 是一个静态模板，里面包含了应用代码、依赖和运行环境。
+- `容器（Container）` 是镜像启动后的运行实例，你可以把它理解成“真正跑起来的进程环境”。
+
+一个更直观的类比是：镜像像安装包，容器像安装后正在运行的应用。平时我们写 Dockerfile，本质上就是在描述“这个安装包应该怎么生成”。
+
+> [!TIP]
+>
+> 国内拉取官方镜像时有时会比较慢，必要时可以配置镜像加速。
+>
+> 我目前在用的镜像站是：`https://docker.m.daocloud.io`
+
+## Docker 和虚拟机有什么区别
+
+很多人会把 Docker 和虚拟机放在一起理解，这没问题，因为它们都能提供隔离环境，但实现思路并不一样。
+
+虚拟机通常会完整模拟一套操作系统，每个实例里都有独立内核和系统服务，所以隔离更完整，但资源占用也更高，启动速度通常更慢。
+
+Docker 容器则共享宿主机内核，只隔离应用运行所需的进程、网络、文件系统和资源视图。也因为少了一整层完整系统，容器通常更轻、更快，更适合做应用部署、本地开发环境和临时服务。
+
+简单来说：
+
+- 想要完整操作系统级别隔离，虚拟机更合适。
+- 想快速启动应用环境、减少资源开销，Docker 更常用。
+
+## Dockerfile 是什么
+
+Dockerfile 是一个文本文件，用来定义镜像的构建过程。
+
+你可以把它理解成一份“构建说明书”：从哪个基础镜像开始、工作目录在哪、复制哪些文件、安装什么依赖、最终启动什么命令，都会写在里面。只要 Dockerfile 稳定，镜像的构建结果通常也会更稳定。
+
+一个最常见的 Node.js 示例大致如下：
+
+```dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["yarn", "start"]
+```
+
+这份文件可以按顺序理解：
+
+- `FROM`：指定基础镜像，这里表示基于 `node:20-alpine` 来构建。
+- `WORKDIR`：设置容器中的工作目录。
+- `COPY`：把项目文件复制到镜像里。
+- `RUN`：在构建镜像时执行命令，常用于安装依赖。
+- `EXPOSE`：声明容器会使用的端口。
+- `CMD`：指定容器启动后默认执行的命令。
+
+其中 `RUN` 是在“构建镜像时”执行，不是在容器启动后执行。常见写法有两种：
+
+shell 格式：
+
+```sh
+RUN yarn install
+```
+
+exec 格式：
+
+```sh
+RUN ["yarn", "install"]
+```
+
+多数场景下，这两种写法都能用。对初学者来说，更重要的是先理解它的职责：`RUN` 用于构建阶段，`CMD` 用于启动阶段。
+
+还要注意一点：Dockerfile 中的大多数指令都会形成镜像层。无意义的拆分会让镜像更大、构建更慢，所以在可读性允许的范围内，应该尽量避免过多重复层。
+
+## Docker Compose 是什么
+
+当项目里不只有一个服务时，单独使用 `docker run` 就会开始变得麻烦。
+
+比如一个常见的本地开发环境，可能同时需要：
+
+- 一个 Web 应用
+- 一个 MySQL
+- 一个 Redis
+
+如果每个服务都手动写一长串启动命令，维护成本会很高。Docker Compose 就是用来解决这个问题的。它允许你把多个相关服务统一写进一个配置文件里，然后通过一个命令把它们一起启动。
+
+现在更常见的写法是 `compose.yaml`，命令也通常写成 `docker compose`。一个最小示例如下：
+
+```yaml
+services:
+  app:
+    build: .
+    ports:
+      - '3000:3000'
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+```
+
+这段配置表达的意思并不复杂：
+
+- `app` 服务从当前目录的 Dockerfile 构建镜像。
+- `redis` 服务直接使用官方镜像。
+- 两个服务一起启动，应用服务依赖 Redis。
+
+所以可以把 Docker Compose 理解成“多容器应用的编排入口”。它很适合本地开发、测试环境和小型服务组合。
+
+## 常用命令
+
+如果你刚开始接触 Docker，先把下面这条链路跑通就够了（现在这些ai基本能够完成，但是不一定能跑起来，需要自己检查）
+
+1. 写一个 Dockerfile。
+2. 用 Dockerfile 构建镜像。
+3. 用镜像启动容器。
+4. 查看日志，确认服务是否正常运行。
+
+对应的常见命令如下：
+
+```bash
+# 根据当前目录的 Dockerfile 构建镜像
+docker build -t my-app .
+
+# 启动容器并映射端口
+docker run -d --name my-app-container -p 3000:3000 my-app
+
+# 查看正在运行的容器
+docker ps
+
+# 查看容器日志
+docker logs my-app-container
+
+# 进入容器内部排查问题
+docker exec -it my-app-container sh
+```
+
+这几条命令基本覆盖了初学阶段最常见的使用场景：构建、启动、查看状态、看日志和进入容器排查。
+
+## 常用命令速查
+
+比起背一整页命令，更实用的是先记住高频的那几个。
+
+### 1. 镜像相关
+
+- `docker build -t name .`：根据 Dockerfile 构建镜像。
+- `docker images`：查看本地已有镜像。
+- `docker rmi image_id`：删除不再需要的镜像。
+
+### 2. 容器相关
+
+- `docker run ...`：创建并启动一个新容器。
+- `docker ps`：查看正在运行的容器。
+- `docker ps -a`：查看所有容器，包括已停止的。
+- `docker stop container_id`：停止容器。
+- `docker start container_id`：重新启动已停止的容器。
+- `docker rm container_id`：删除容器。
+
+### 3. 排查与调试
+
+- `docker logs container_id`：查看容器日志输出。
+- `docker exec -it container_id sh`：进入容器内部执行命令。
+- `docker inspect container_id`：查看容器或镜像的详细信息。
+- `docker stats`：实时查看容器资源使用情况。
+
+### 4. Compose 相关
+
+- `docker compose up`：启动 Compose 文件中定义的服务。
+- `docker compose up -d`：以后台方式启动服务。
+- `docker compose down`：停止并移除当前编排启动的服务。
+- `docker compose logs`：查看多个服务的聚合日志。
+
