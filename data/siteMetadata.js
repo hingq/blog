@@ -56,7 +56,19 @@ const siteMetadata = {
     // content security policy in the `next.config.js` file.
     // Select a provider and use the environment variables associated to it
     // https://vercel.com/docs/environment-variables
-    provider: 'giscus', // supported providers: giscus, utterances, disqus
+    provider: 'waline', // supported providers: giscus, utterances, disqus, waline
+
+    walineConfig: {
+      // Waline 服务端地址
+      serverURL: 'http://commen.fortunately.top/',
+      pageSize: 10,
+      requiredMeta: ['nick', 'mail'],
+      login: 'enable',
+      locale: {
+        sofa: '快来写下你的第一条评论吧~',
+        placeholder: '欢迎留言（支持 Markdown）',
+      },
+    },
     giscusConfig: {
       // Visit the link below, and follow the steps in the 'configuration' section
       // https://giscus.app/
