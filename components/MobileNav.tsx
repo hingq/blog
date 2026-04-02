@@ -55,7 +55,7 @@ const MobileNav = () => {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 z-60 bg-black/25" />
+            <div className="fixed inset-0 z-60 bg-white/12 backdrop-blur-sm dark:bg-black/20" />
           </TransitionChild>
 
           <TransitionChild
@@ -67,7 +67,7 @@ const MobileNav = () => {
             leaveFrom="translate-x-0 opacity-95"
             leaveTo="translate-x-full opacity-0"
           >
-            <DialogPanel className="fixed top-0 left-0 z-70 h-full w-full border-l border-white/30 bg-white/70 shadow-2xl shadow-black/20 backdrop-blur-xl duration-300 dark:border-white/10 dark:bg-gray-950/70">
+            <DialogPanel className="fixed top-0 left-0 z-70 h-full w-full border-l border-white/30 bg-white/78 shadow-2xl shadow-black/20 backdrop-blur-xl duration-300 dark:border-white/10 dark:bg-gray-950/78">
               <nav
                 ref={navRef}
                 className="mt-8 flex h-full basis-0 flex-col items-start overflow-y-auto pt-2 pl-12 text-left"

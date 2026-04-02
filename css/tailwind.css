@@ -116,6 +116,148 @@
       color: var(--color-gray-100);
     }
   }
+
+  .comment-section {
+    @apply mx-auto max-w-3xl border-t border-gray-200 pt-10 text-left text-gray-700 dark:border-gray-700 dark:text-gray-300;
+  }
+
+  .comment-section__header {
+    @apply max-w-2xl;
+  }
+
+  .comment-section__title {
+    @apply text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100;
+  }
+
+  .comment-section__description {
+    @apply mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400;
+  }
+
+  .comment-section__body {
+    @apply mt-6;
+  }
+
+  .comment-section__load-button {
+    @apply inline-flex items-center rounded-full border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:border-primary-500 hover:text-primary-600 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-primary-500 dark:hover:text-primary-400;
+  }
+
+  .comment-thread {
+    @apply text-left;
+  }
+
+  .comment-thread .tk-comments-container {
+    @apply text-left;
+  }
+
+  .comment-thread .tk-comments-title {
+    display: none;
+  }
+
+  .comment-thread .tk-comments-count,
+  .comment-thread .tk-comments-sort,
+  .comment-thread .tk-time,
+  .comment-thread .tk-extra-text,
+  .comment-thread .tk-action-link {
+    @apply text-sm text-gray-500 dark:text-gray-400;
+  }
+
+  .comment-thread .tk-comments-sort {
+    @apply mb-5 flex flex-wrap items-center gap-2;
+  }
+
+  .comment-thread .tk-submit {
+    @apply rounded-full bg-gray-900 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-primary-400;
+  }
+
+  .comment-thread .tk-input,
+  .comment-thread .tk-meta-input {
+    @apply rounded-2xl border border-gray-300 bg-white px-4 py-3 text-gray-700 shadow-none transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200;
+  }
+
+  .comment-thread .tk-input::placeholder,
+  .comment-thread .tk-meta-input::placeholder {
+    @apply text-gray-400 dark:text-gray-500;
+  }
+
+  .comment-thread .tk-row {
+    @apply gap-3;
+  }
+
+  .comment-thread .tk-meta-input {
+    min-height: 44px;
+  }
+
+  .comment-thread .tk-main {
+    @apply mt-8;
+  }
+
+  .comment-thread .tk-comment {
+    @apply border-t border-gray-200 py-6 first:border-t-0 dark:border-gray-700;
+  }
+
+  .comment-thread .tk-content {
+    @apply mt-3 text-[0.95rem] leading-7 text-gray-700 dark:text-gray-200;
+  }
+
+  .comment-thread .tk-content p {
+    @apply my-0;
+  }
+
+  .comment-thread .tk-content img {
+    @apply rounded-xl;
+  }
+
+  .comment-thread .tk-avatar {
+    @apply mt-1;
+  }
+
+  .comment-thread .tk-avatar-img {
+    @apply h-10 w-10 rounded-full ring-1 ring-gray-200 dark:ring-gray-700;
+  }
+
+  .comment-thread .tk-nick {
+    @apply text-base font-medium text-gray-900 dark:text-gray-100;
+  }
+
+  .comment-thread .tk-nick-link {
+    @apply text-primary-500 hover:text-primary-600 dark:hover:text-primary-400;
+  }
+
+  .comment-thread .tk-actions {
+    @apply mt-3 flex flex-wrap items-center gap-x-4 gap-y-2;
+  }
+
+  .comment-thread .tk-action-icon,
+  .comment-thread .tk-submit-action-icon {
+    @apply text-gray-400 dark:text-gray-500;
+  }
+
+  .comment-thread .tk-extras {
+    @apply mt-3;
+  }
+
+  .comment-thread .tk-replies {
+    @apply mt-5 border-l border-gray-200 pl-5 dark:border-gray-700;
+  }
+
+  .comment-thread .tk-pagination {
+    @apply mt-8 border-t border-gray-200 pt-4 dark:border-gray-700;
+  }
+
+  .comment-thread .tk-pagination-pagers,
+  .comment-thread .tk-pagination-options {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .comment-thread .tk-pagination-pager,
+  .comment-thread .tk-sort-item {
+    @apply rounded-full border border-gray-300 px-3 py-1.5 text-sm transition-colors hover:border-primary-500 hover:text-primary-600 dark:border-gray-600 dark:hover:border-primary-500 dark:hover:text-primary-400;
+  }
+
+  .comment-thread .tk-comments-no,
+  .comment-thread .tk-comments-error {
+    @apply rounded-2xl border border-dashed border-gray-300 px-5 py-6 text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400;
+  }
 }
 
 .task-list-item::before {

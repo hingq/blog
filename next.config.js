@@ -10,9 +10,9 @@ const remoteImagePatterns = [
 ]
 
 const defaultCspHosts = {
-  comments: ['comment.fortunately.top'],
+  comments: ['comment.fortunately.top', 'owo.imaegoo.com'],
   analytics: ['analytics.umami.is'],
-  images: ['picsum.photos'],
+  images: ['picsum.photos', 'weavatar.com'],
   runtimeContent: [],
 }
 

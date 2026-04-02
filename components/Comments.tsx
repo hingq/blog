@@ -21,16 +21,30 @@ export default function Comments({ slug }: { slug: string }) {
   }
 
   return (
-    <>
-      {loadComments ? (
-        isTwikooCommentsConfig(commentsConfig) ? (
-          <TwikooComments key={slug} slug={slug} twikooConfig={commentsConfig.twikooConfig} />
+    <section className="comment-section">
+      <div className="comment-section__header">
+        <h2 className="comment-section__title">评论</h2>
+        <p className="comment-section__description">欢迎交流、补充或指出问题。</p>
+      </div>
+      <div className="comment-section__body">
+        {loadComments ? (
+          isTwikooCommentsConfig(commentsConfig) ? (
+            <TwikooComments key={slug} slug={slug} twikooConfig={commentsConfig.twikooConfig} />
+          ) : (
+            <div className="comment-thread">
+              <PlinyComments commentsConfig={commentsConfig} slug={slug} />
+            </div>
+          )
         ) : (
-          <PlinyComments commentsConfig={commentsConfig} slug={slug} />
-        )
-      ) : (
-        <button onClick={() => setLoadComments(true)}>Load Comments</button>
-      )}
-    </>
+          <button
+            type="button"
+            className="comment-section__load-button"
+            onClick={() => setLoadComments(true)}
+          >
+            加载评论
+          </button>
+        )}
+      </div>
+    </section>
   )
 }

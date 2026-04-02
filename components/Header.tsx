@@ -7,7 +7,8 @@ import ThemeSwitch from './ThemeSwitch'
 import SearchButton from './SearchButton'
 
 const Header = () => {
-  let headerClass = 'flex items-center w-full bg-white dark:bg-gray-950 justify-between py-10'
+  let headerClass =
+    'flex items-center w-full justify-between border-b border-gray-100 bg-white py-10 dark:border-gray-800 dark:bg-gray-950'
   if (siteMetadata.stickyNav) {
     headerClass += ' sticky top-0 z-50'
   }
