@@ -13,7 +13,7 @@ result=$(
     --RegionId "$REGION_ID" \
     --Name "deploy-next-blog" \
     --Type "RunShellScript" \
-    --InstanceId.1 "$INSTANCE_ID" \
+    --InstanceId "[\"$INSTANCE_ID\"]" \
     --CommandContent "$(printf '%s' "$DEPLOY_CMD" | base64 -w 0)" \
     --Timeout 1800
 )
