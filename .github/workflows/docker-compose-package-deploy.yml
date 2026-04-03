@@ -16,7 +16,7 @@ jobs:
     env:
       REGISTRY: crpi-gkcfsuhf4ajbzvh0.cn-beijing.personal.cr.aliyuncs.com
       IMAGE_REPO: ather/next_blog
-      REGION_ID: cn-beijing
+      REGION_ID: cn-chengdu
       INSTANCE_ID: ${{ secrets.ALIYUN_INSTANCE_ID }}
 
     steps:
