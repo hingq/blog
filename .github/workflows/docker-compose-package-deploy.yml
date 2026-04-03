@@ -68,7 +68,7 @@ jobs:
 
       - name: Trigger deploy on ECS
         env:
-          DEPLOY_CMD: bash /blog/install.sh latest
+          DEPLOY_CMD: cd /blog && bash /blog/install.sh latest
         run: bash .github/scripts/docker-compose-package-deploy/trigger-ecs-deploy.sh
 
       - name: Wait for deploy result
