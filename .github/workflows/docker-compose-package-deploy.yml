@@ -1,81 +1,75 @@
-name: Package and Deploy Docker Compose
+name: Build and Deploy via ACR
 
 on:
   workflow_dispatch:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
-  package-and-deploy:
+  build-and-deploy:
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     environment: blog
+
+    env:
+      REGISTRY: crpi-gkcfsuhf4ajbzvh0.cn-beijing.personal.cr.aliyuncs.com
+      IMAGE_REPO: ather/next_blog
+      REGION_ID: cn-beijing
+      INSTANCE_ID: ${{ secrets.ALIYUN_INSTANCE_ID }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Read package version
+        id: package_version
+        run: node .github/scripts/read-package-version.mjs package.json
+
+      - name: Validate required secrets
+        env:
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+          ALIYUN_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+          ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+          ALIYUN_INSTANCE_ID: ${{ secrets.ALIYUN_INSTANCE_ID }}
+        run: bash .github/scripts/docker-compose-package-deploy/validate-required-secrets.sh
+
+      - name: Log in to ACR
+        env:
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+        run: bash .github/scripts/docker-compose-package-deploy/login-acr.sh
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image with docker compose
-        run: docker compose build --no-cache nextjs
-
-      - name: Save image as tar package
-        run: docker save -o "blog-linux-amd64.tar" "blog:latest"
-
-      - name: Validate deploy secrets
-        run: |
-          set -e
-          if [ -z "${{ secrets.DEPLOY_HOST }}" ] || [ -z "${{ secrets.DEPLOY_USER }}" ]; then
-            echo "DEPLOY_HOST and DEPLOY_USER are required. Please add them to repository secrets or Environment secrets for environment: blog."
-            exit 1
-          fi
-          if [ -z "${{ secrets.DEPLOY_SSH_KEY }}" ] && [ -z "${{ secrets.DEPLOY_PASSWORD }}" ]; then
-            echo "Either DEPLOY_SSH_KEY or DEPLOY_PASSWORD is required for SCP/SSH deployment."
-            exit 1
-          fi
-
-      - name: Prepare env file for upload
-        run: |
-          if [ -n "${{ secrets.DEPLOY_ENV_FILE }}" ]; then
-            printf '%s' "${{ secrets.DEPLOY_ENV_FILE }}" > .env
-          fi
-          if [ ! -f .env ]; then
-            echo "No .env found. Add repository .env file or set DEPLOY_ENV_FILE secret in Environment: blog."
-            exit 1
-          fi
-
-      - name: Normalize artifact permissions
-        run: |
-          sudo chown "$USER:$USER" blog-linux-amd64.tar docker-compose.yml .env || true
-          chmod 644 blog-linux-amd64.tar docker-compose.yml .env
-
-      - name: Upload tar and compose file to server
-        uses: appleboy/scp-action@v0.1.7
+      - name: Build and push image
+        uses: docker/build-push-action@v6
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          source: "blog-linux-amd64.tar,docker-compose.yml,.env"
-          target: /blog
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}:${{ steps.package_version.outputs.package_version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}:latest
+          target: runner
+          no-cache: true
 
-      - name: Deploy on server
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          script: |
-            set -e
-            cd "/blog"
-            docker load -i "blog-linux-amd64.tar"
-            docker compose down
-            docker compose up -d --force-recreate nextjs
-            docker compose ps
-            rm -f "blog-linux-amd64.tar"
+      - name: Install Aliyun CLI
+        run: bash .github/scripts/docker-compose-package-deploy/install-aliyun-cli.sh
+
+      - name: Configure Aliyun CLI
+        env:
+          ALIYUN_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+          ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+        run: bash .github/scripts/docker-compose-package-deploy/configure-aliyun-cli.sh
+
+      - name: Trigger deploy on ECS
+        env:
+          DEPLOY_CMD: bash /blog/install.sh latest
+        run: bash .github/scripts/docker-compose-package-deploy/trigger-ecs-deploy.sh
+
+      - name: Wait for deploy result
+        run: bash .github/scripts/docker-compose-package-deploy/wait-for-ecs-deploy.sh

@@ -1,0 +1,43 @@
+name: Auto Bump Minor Version
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-bump-minor-version-main
+  cancel-in-progress: false
+
+jobs:
+  bump-version:
+    if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Bump package version
+        id: bump_version
+        run: node .github/scripts/bump-package-version.mjs package.json
+
+      - name: Configure git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit bumped version
+        run: |
+          git add package.json
+          git commit -m "ci: bump version to ${{ steps.bump_version.outputs.new_version }}"
+
+      - name: Push version commit
+        run: git push origin HEAD:main
