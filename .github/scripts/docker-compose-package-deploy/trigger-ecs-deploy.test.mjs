@@ -19,7 +19,7 @@ async function writeExecutable(filePath, contents) {
   await chmod(filePath, 0o755)
 }
 
-test('passes the ECS instance id as a JSON array for the CLI array parameter', async () => {
+test('passes the ECS instance id with the documented RunCommand syntax and base64 encoding flag', async () => {
   const tempDir = await mkdtemp(join(tmpdir(), 'trigger-ecs-deploy-'))
   const mockBinDir = join(tempDir, 'bin')
   const githubEnvPath = join(tempDir, 'github-env.txt')
@@ -67,7 +67,8 @@ printf '%s' 'encoded-command'
   const aliyunArgs = await readFile(aliyunArgsPath, 'utf8')
   const githubEnv = await readFile(githubEnvPath, 'utf8')
 
-  assert.match(aliyunArgs, /--InstanceId\n\["i-2ze123example"\]\n/)
-  assert.doesNotMatch(aliyunArgs, /--InstanceId\.1\ni-2ze123example\n/)
+  assert.match(aliyunArgs, /--ContentEncoding\nBase64\n/)
+  assert.match(aliyunArgs, /--InstanceId\.1\ni-2ze123example\n/)
+  assert.doesNotMatch(aliyunArgs, /--InstanceId\n\["i-2ze123example"\]\n/)
   assert.match(githubEnv, /^COMMAND_ID=cmd-123$/m)
 })

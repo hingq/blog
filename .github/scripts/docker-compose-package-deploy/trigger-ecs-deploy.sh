@@ -7,14 +7,20 @@ set -euo pipefail
 : "${INSTANCE_ID:?INSTANCE_ID is required}"
 : "${GITHUB_ENV:?GITHUB_ENV is required}"
 
+echo "Triggering ECS deploy"
+echo "REGION_ID=$REGION_ID"
+echo "INSTANCE_ID_SET=${INSTANCE_ID:+yes}"
+echo "INSTANCE_ID_LENGTH=${#INSTANCE_ID}"
+
 result=$(
   aliyun ecs RunCommand \
     --profile github \
     --RegionId "$REGION_ID" \
     --Name "deploy-next-blog" \
     --Type "RunShellScript" \
-    --InstanceId "[\"$INSTANCE_ID\"]" \
     --CommandContent "$(printf '%s' "$DEPLOY_CMD" | base64 -w 0)" \
+    --ContentEncoding "Base64" \
+    --InstanceId.1 "$INSTANCE_ID" \
     --Timeout 1800
 )
 
