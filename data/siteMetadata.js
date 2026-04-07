@@ -6,7 +6,7 @@ const siteMetadata = {
   description: '一川烟雨，满城风絮，梅子黄时雨',
   language: 'zh-cn',
   theme: 'system', // system, dark or light
-  siteUrl: 'https://fortunately.top',
+  siteUrl: 'https://www.fortunately.top',
   siteRepo: 'https://github.com/timlrx/tailwind-nextjs-starter-blog',
   siteLogo: `${process.env.BASE_PATH || ''}/static/images/logo.png`,
   socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,
