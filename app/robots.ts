@@ -1,6 +1,5 @@
 import { MetadataRoute } from 'next'
 import siteMetadata from '@/data/siteMetadata'
-import { getRobotsHost } from '@/lib/robots-host.mjs'
 
 export const dynamic = 'force-static'
 
