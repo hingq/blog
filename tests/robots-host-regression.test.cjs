@@ -7,8 +7,8 @@ const { pathToFileURL } = require('node:url')
 test('getRobotsHost strips protocol, path, and port from site URLs', async () => {
   const { getRobotsHost } = await loadRobotsHost()
 
-  assert.equal(getRobotsHost('https://fortunately.top'), 'fortunately.top')
-  assert.equal(getRobotsHost('https://fortunately.top/'), 'fortunately.top')
+  assert.equal(getRobotsHost('https://www.fortunately.top'), 'www.fortunately.top')
+  assert.equal(getRobotsHost('https://www.fortunately.top/'), 'www.fortunately.top')
   assert.equal(getRobotsHost('http://blog.example.com:8080/path?q=1'), 'blog.example.com')
 })
 
