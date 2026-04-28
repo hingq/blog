@@ -1,5 +1,8 @@
 name: LeetCode Daily Bot (Rust)
 
+permissions:
+  contents: write
+
 on:
   schedule:
     - cron: '30 0 * * *' # 每天 UTC 时间 00:30 (北京时间 08:30)
@@ -12,6 +15,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+          persist-credentials: true
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -54,7 +60,7 @@ jobs:
           git add data/blog/*.mdx
           if ! git diff --staged --quiet; then
             git commit -m "docs: auto-post leetcode daily solution"
-            git push
+            git push origin HEAD:main
           else
             echo "No changes to commit, solution might already exist."
           fi
