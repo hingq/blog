@@ -27,8 +27,9 @@ fn read_required_env_trimmed(keys: &[&str]) -> Result<String> {
 }
 
 fn read_gemini_models() -> Vec<String> {
-    let configured =
-        env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-3.1-pro-preview,gemini-3-flash".to_string());
+    let configured = env::var("GEMINI_MODEL").unwrap_or_else(|_| {
+        "gemini-3.1-pro-preview,gemini-3-flash-preview,gemini-2.5-flash".to_string()
+    });
 
     let mut models = Vec::new();
     for model in configured.split(',') {
