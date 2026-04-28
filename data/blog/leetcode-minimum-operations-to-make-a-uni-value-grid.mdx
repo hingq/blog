@@ -25,7 +25,7 @@ summary: '自动生成的 LeetCode 每日一题题解'
 ```text
 输入：grid = [[2,4],[6,8]], x = 2
 输出：4
-解释：可以执行下述操作使所有元素都等于 4 ：
+解释：可以执行下述操作使所有元素都等于 4 ： 
 - 2 加 x 一次。
 - 6 减 x 一次。
 - 8 减 x 两次。
@@ -62,67 +62,69 @@ summary: '自动生成的 LeetCode 每日一题题解'
 
 ## 题解分析
 
-### 解题思路
+## 解题思路
 
-本题的核心是寻找一个目标值，使得网格中所有元素变为该值的操作次数最少。我们可以将问题拆解为以下几个步骤：
+本题的目标是通过加减整数 $x$，使网格中所有元素相等。我们需要解决两个核心问题：
+1. **可行性判断**：什么时候无法使所有元素相等？
+2. **最优目标值**：如果可行，变成哪个数值能使操作次数最少？
 
-#### 1. 判定可行性
+### 1. 可行性判断
+两个数 $a$ 和 $b$ 能够通过加减 $x$ 变得相等，当且仅当它们的差值是 $x$ 的倍数，即：
+$|a - b| \pmod x = 0$
+这意味着网格中的所有元素对 $x$ 取模的结果必须相同。如果存在任何一个元素与首个元素的余数不同，直接返回 $-1$。
 
-每次操作只能对元素加 $x$ 或减 $x$。这意味着，如果两个数 $a$ 和 $b$ 能够通过有限次操作变得相等，那么它们必须满足：
-$$(a - b) \mod x = 0 \implies a \equiv b \pmod x$$
-即网格中所有元素对 $x$ 取模的余数必须相同。如果存在任何一个元素其余数不同，则无法达成目标，直接返回 `-1`。
+### 2. 最优目标值
+假设我们将所有元素都变为目标值 $T$。总操作次数为：
+$$Cost = \sum_{i,j} \frac{|grid[i][j] - T|}{x} = \frac{1}{x} \sum_{i,j} |grid[i][j] - T|$$
+由于 $x$ 是常数，最小化总操作数等价于最小化 $\sum |grid[i][j] - T|$。
 
-#### 2. 转化为经典中位数问题
+这是一个经典的统计学问题：**给定一组数，求一个数 $T$ 使得各数到 $T$ 的绝对距离之和最小**。
+结论是：**$T$ 必须是这组数的中位数**。
 
-假设目标值为 $T$，网格中所有元素为 $a_1, a_2, \dots, a_k$（其中 $k = m \times n$）。总操作步数为：
-$$S = \sum_{i=1}^k \frac{|a_i - T|}{x} = \frac{1}{x} \sum_{i=1}^k |a_i - T|$$
-要使 $S$ 最小，等价于使 $\sum_{i=1}^k |a_i - T|$ 最小。
-这是一个经典的数学问题：**给定数轴上的一组点，到所有点距离之和最小的点是这组点的中位数。**
-
-#### 3. 算法流程
-
+### 3. 算法步骤
 1. 将二维网格 `grid` 展平为一维数组 `nums`。
-2. 遍历数组，检查是否所有元素 `nums[i] % x` 都相等。若不相等，返回 `-1`。
-3. 对数组 `nums` 进行排序。
-4. 取排序后的中位数 $T = nums[k // 2]$。
-5. 遍历数组计算 $\sum |nums[i] - T| / x$ 并返回结果。
+2. 遍历数组，检查是否所有元素 `nums[i] % x` 都相等。若不相等，返回 $-1$。
+3. 对数组进行排序。
+4. 取排序后数组的中位数 $T = nums[len/2]$。
+5. 计算每个元素与 $T$ 的差的绝对值，除以 $x$ 后累加即为答案。
 
-### 复杂度分析
+## 复杂度分析
 
-- **时间复杂度**: $O(N \log N)$，其中 $N = m \times n$。主要的开销在于对 $N$ 个元素进行排序。
-- **空间复杂度**: $O(N)$，需要一个额外的数组来存储展平后的网格元素。
+- **时间复杂度**: $O(N \log N)$，其中 $N = m \times n$。主要开销在于对 $N$ 个元素进行排序。如果使用快速选择算法（QuickSelect）寻找中位数，可以将复杂度优化至 $O(N)$。
+- **空间复杂度**: $O(N)$，需要一个一维数组存储网格中的所有元素。
 
-### 代码实现 (Python)
+## 代码实现 (Python)
 
 ```python
 class Solution:
-    def minOperations(self, grid: List[List[int]], x: int) -> int:
-        # 1. 展平网格
+    def minOperations(self, grid: list[list[int]], x: int) -> int:
+        # 1. 将二维网格展平
         nums = []
         for row in grid:
             nums.extend(row)
 
         # 2. 检查可行性
-        # 所有元素相对于 x 的余数必须一致
-        mod_val = nums[0] % x
-        for val in nums:
-            if val % x != mod_val:
+        # 所有元素对 x 的余数必须相同
+        mod = nums[0] % x
+        for num in nums:
+            if num % x != mod:
                 return -1
 
-        # 3. 排序寻找中位数
+        # 3. 排序找中位数
         nums.sort()
         n = len(nums)
         median = nums[n // 2]
 
-        # 4. 计算最小操作数
+        # 4. 计算总操作数
         ans = 0
-        for val in nums:
-            ans += abs(val - median) // x
+        for num in nums:
+            # 此时 num - median 一定能被 x 整除
+            ans += abs(num - median) // x
 
         return ans
 ```
 
-### 代码实现 (Rust)
+## 代码实现 (Rust)
 
 ```rust
 impl Solution {
@@ -130,24 +132,30 @@ impl Solution {
         let mut nums: Vec<i32> = grid.into_iter().flatten().collect();
         let n = nums.len();
 
-        // 检查可行性：所有数对 x 取模余数必须相同
+        // 1. 检查可行性
         let target_mod = nums[0] % x;
-        if !nums.iter().all(|&val| val % x == target_mod) {
-            return -1;
+        for &num in &nums {
+            if num % x != target_mod {
+                return -1;
+            }
         }
 
-        // 排序以寻找中位数
-        nums.sort_unstable();
-        let median = nums[n / 2];
+        // 2. 寻找中位数
+        // 使用 select_nth_unstable 实现 O(N) 查找中位数
+        let mid = n / 2;
+        nums.select_nth_unstable(mid);
+        let median = nums[mid];
 
-        // 计算到中位数的步数之和
+        // 3. 计算结果
         nums.iter()
-            .map(|&val| (val - median).abs() / x)
+            .map(|&num| (num - median).abs() / x)
             .sum()
     }
 }
 ```
 
-### 总结
-
-该问题结合了**数论基础**（余数判别）与**统计学性质**（中位数最小化绝对偏差和）。在实现时，利用排序寻找中位数是最直观的方法；若对性能有极高要求，可以使用 _Quick Select_ 算法将中位数的寻找过程优化至平均 $O(N)$ 时间复杂度。
+### 为什么是中位数？
+直观理解：假设当前目标值 $T$ 左边有 $n_1$ 个数，右边有 $n_2$ 个数。
+- 如果将 $T$ 增大 $d$，左边的数到 $T$ 的距离都会增加 $d$，右边的数距离减少 $d$。总距离变化为 $(n_1 - n_2) \cdot d$。
+- 为了让总距离减小，我们应该向数量多的一侧移动 $T$。
+- 当 $n_1 = n_2$ 时（即 $T$ 位于中位数），达到平衡点，总距离最小。
