@@ -49,3 +49,9 @@ tsconfig.tsbuildinfo
 .contentlayer
 *.tar
 .env
+
+# Rust task build output
+/tasks/leetcode-daily/target/
+
+# LeetCode daily runtime cache
+/data/leetcode-daily/

@@ -1,0 +1,49 @@
+name: LeetCode Daily Bot (Rust)
+
+on:
+  schedule:
+    - cron: '30 0 * * *' # 每天 UTC 时间 00:30 (北京时间 08:30)
+  workflow_dispatch:     # 支持手动在 GitHub Actions 页面触发
+
+jobs:
+  run-task:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # 缓存 Cargo 依赖以加快执行速度
+      - name: Cache Cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('tasks/leetcode-daily/Cargo.toml') }}
+
+      - name: Run Crawler & Publisher
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
+          SMTP_HOST: smtp.gmail.com # 如果你使用 QQ/网易 等邮箱，需要修改此主机地址
+        run: |
+          cd tasks/leetcode-daily
+          cargo run --release
+
+      - name: Commit and Push to main
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/blog/*.mdx
+          if ! git diff --staged --quiet; then
+            git commit -m "docs: auto-post leetcode daily solution"
+            git push
+          else
+            echo "No changes to commit, solution might already exist."
+          fi

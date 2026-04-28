@@ -7,12 +7,16 @@ const remoteImagePatterns = [
     protocol: 'https',
     hostname: 'picsum.photos',
   },
+  {
+    protocol: 'https',
+    hostname: 'assets.leetcode.com',
+  },
 ]
 
 const defaultCspHosts = {
   comments: ['comment.fortunately.top', 'owo.imaegoo.com'],
   analytics: ['analytics.umami.is'],
-  images: ['picsum.photos', 'weavatar.com'],
+  images: ['picsum.photos', 'weavatar.com', 'assets.leetcode.com'],
   runtimeContent: [],
 }
 
