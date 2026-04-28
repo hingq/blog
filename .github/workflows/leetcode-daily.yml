@@ -3,7 +3,7 @@ name: LeetCode Daily Bot (Rust)
 on:
   schedule:
     - cron: '30 0 * * *' # 每天 UTC 时间 00:30 (北京时间 08:30)
-  workflow_dispatch:     # 支持手动在 GitHub Actions 页面触发
+  workflow_dispatch: # 支持手动在 GitHub Actions 页面触发
 
 jobs:
   run-task:
@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -47,3 +47,5 @@ jobs:
           else
             echo "No changes to commit, solution might already exist."
           fi
+      - name: publish mdx
+        run: yarn run publish:content
