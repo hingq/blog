@@ -19,6 +19,12 @@ jobs:
           token: ${{ github.token }}
           persist-credentials: true
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -52,6 +58,9 @@ jobs:
         run: |
           cd tasks/leetcode-daily
           cargo run --release
+
+      - name: Install frontend dependencies
+        run: yarn install --immutable
 
       - name: Commit and Push to main
         run: |
