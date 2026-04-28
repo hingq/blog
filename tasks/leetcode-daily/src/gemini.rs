@@ -1,7 +1,35 @@
 use crate::models::{DailyQuestion, GeminiResponse};
 use anyhow::{bail, Context, Result};
+use reqwest::StatusCode;
 
 pub async fn generate_solution(
+    question: &DailyQuestion,
+    api_key: &str,
+    models: &[String],
+) -> Result<(String, String)> {
+    let mut last_error = None;
+
+    for model in models {
+        match generate_solution_with_model(question, api_key, model).await {
+            Ok(content) => return Ok((content, model.clone())),
+            Err(err) if is_retryable_model_error(&err.to_string()) => {
+                eprintln!(
+                    "   模型 {} 因配额或限流失败，尝试下一个模型: {}",
+                    model, err
+                );
+                last_error = Some(err);
+            }
+            Err(err) => return Err(err),
+        }
+    }
+
+    match last_error {
+        Some(err) => Err(err),
+        None => bail!("未配置可用的 Gemini 模型"),
+    }
+}
+
+async fn generate_solution_with_model(
     question: &DailyQuestion,
     api_key: &str,
     model: &str,
@@ -40,11 +68,32 @@ pub async fn generate_solution(
     let status = resp.status();
     let body = resp.text().await?;
     if !status.is_success() {
-        bail!("Gemini API 请求失败: HTTP {}: {}", status, body);
+        bail!(
+            "Gemini API 请求失败(model={}): HTTP {}: {}",
+            model,
+            status,
+            body
+        );
     }
 
     let resp: GeminiResponse = serde_json::from_str(&body).context("解析 Gemini API 响应失败")?;
     extract_gemini_text(resp)
+}
+
+fn is_retryable_model_error(error_message: &str) -> bool {
+    let message = error_message.to_ascii_lowercase();
+    let retryable_markers = [
+        StatusCode::TOO_MANY_REQUESTS.as_str(),
+        "resource_exhausted",
+        "quota",
+        "rate limit",
+        "rate_limit",
+        "too many requests",
+    ];
+
+    retryable_markers
+        .iter()
+        .any(|marker| message.contains(marker))
 }
 
 fn extract_gemini_text(resp: GeminiResponse) -> Result<String> {
@@ -64,6 +113,14 @@ fn extract_gemini_text(resp: GeminiResponse) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn detects_retryable_model_errors() {
+        assert!(is_retryable_model_error("HTTP 429: Too Many Requests"));
+        assert!(is_retryable_model_error("status: RESOURCE_EXHAUSTED"));
+        assert!(is_retryable_model_error("quota exceeded"));
+        assert!(!is_retryable_model_error("HTTP 400: invalid argument"));
+    }
 
     #[test]
     fn extracts_gemini_text() {

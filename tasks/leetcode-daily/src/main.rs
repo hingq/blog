@@ -26,13 +26,27 @@ fn read_required_env_trimmed(keys: &[&str]) -> Result<String> {
     anyhow::bail!("环境变量未设置或为空: {}", keys.join(" / "))
 }
 
+fn read_gemini_models() -> Vec<String> {
+    let configured =
+        env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-3.1-pro,gemini-3-flash".to_string());
+
+    let mut models = Vec::new();
+    for model in configured.split(',') {
+        let trimmed = model.trim();
+        if !trimmed.is_empty() && !models.iter().any(|existing| existing == trimmed) {
+            models.push(trimmed.to_string());
+        }
+    }
+
+    models
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let project_root = project_root()?;
     load_dotenv(&project_root.join(".env"))?;
 
-    let gemini_model =
-        env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-3-flash-preview".to_string());
+    let gemini_models = read_gemini_models();
     let send_email = env::var("SEND_EMAIL")
         .map(|value| value != "false" && value != "0")
         .unwrap_or(true);
@@ -56,6 +70,7 @@ async fn main() -> Result<()> {
     println!("   当前题目: {}", daily.question.title);
 
     println!("2. 正在准备 Google Gemini 题解...");
+    println!("   候选模型: {}", gemini_models.join(" -> "));
     let solution_path = solution_cache_path(&cache_root, &today);
     let solution = match read_json::<SolutionCache>(&solution_path)? {
         Some(cache) => {
@@ -65,11 +80,12 @@ async fn main() -> Result<()> {
         None => {
             let gemini_key = read_required_env_trimmed(&["GEMINI_API_KEY", "GOOGLE_API_KEY"])
                 .context("Gemini API Key 未设置，请检查 CI secrets 或本地 .env")?;
-            let content = gemini::generate_solution(&daily, &gemini_key, &gemini_model).await?;
+            let (content, used_model) =
+                gemini::generate_solution(&daily, &gemini_key, &gemini_models).await?;
             let cache = SolutionCache {
                 date: daily.date.clone(),
                 title_slug: daily.question.title_slug.clone(),
-                model: gemini_model.clone(),
+                model: used_model,
                 content,
             };
             write_json(&solution_path, &cache)?;
