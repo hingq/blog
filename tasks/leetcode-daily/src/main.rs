@@ -13,6 +13,19 @@ use config::{cache_root, load_dotenv, project_root};
 use models::{DailyQuestion, SolutionCache};
 use std::env;
 
+fn read_required_env_trimmed(keys: &[&str]) -> Result<String> {
+    for key in keys {
+        if let Ok(value) = env::var(key) {
+            let trimmed = value.trim();
+            if !trimmed.is_empty() {
+                return Ok(trimmed.to_string());
+            }
+        }
+    }
+
+    anyhow::bail!("环境变量未设置或为空: {}", keys.join(" / "))
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let project_root = project_root()?;
@@ -50,7 +63,8 @@ async fn main() -> Result<()> {
             cache.content
         }
         None => {
-            let gemini_key = env::var("GEMINI_API_KEY").context("GEMINI_API_KEY 环境变量未设置")?;
+            let gemini_key = read_required_env_trimmed(&["GEMINI_API_KEY", "GOOGLE_API_KEY"])
+                .context("Gemini API Key 未设置，请检查 CI secrets 或本地 .env")?;
             let content = gemini::generate_solution(&daily, &gemini_key, &gemini_model).await?;
             let cache = SolutionCache {
                 date: daily.date.clone(),
