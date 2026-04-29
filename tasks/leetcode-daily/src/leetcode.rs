@@ -1,8 +1,14 @@
 use crate::models::{DailyQuestion, QuestionResponse, TodayRecordResponse};
 use anyhow::{Context, Result};
 
+/// 从 LeetCode 中文站获取每日一题。
+///
+/// LeetCode 的接口是 GraphQL：第一次请求拿到当天题目的 `titleSlug`，
+/// 第二次再用这个 slug 查询完整题目内容。
 pub async fn fetch_daily_question() -> Result<DailyQuestion> {
     let client = reqwest::Client::new();
+
+    // GraphQL 查询字符串。这里只请求当前流程真正需要的字段。
     let today_query = r#"
         query questionOfToday {
           todayRecord {
@@ -24,6 +30,7 @@ pub async fn fetch_daily_question() -> Result<DailyQuestion> {
         .await
         .context("解析 LeetCode 中文站每日一题响应失败")?;
 
+    // `todayRecord` 是数组，当前程序只取第一条作为今天的题目。
     let today = today_resp
         .data
         .today_record
@@ -31,6 +38,7 @@ pub async fn fetch_daily_question() -> Result<DailyQuestion> {
         .next()
         .context("LeetCode 中文站未返回每日一题")?;
 
+    // 第二个查询需要变量 `$titleSlug`，变量值在 `.json(...)` 中传入。
     let question_query = r#"
         query questionData($titleSlug: String!) {
           question(titleSlug: $titleSlug) {
@@ -55,6 +63,7 @@ pub async fn fetch_daily_question() -> Result<DailyQuestion> {
         .await
         .context("解析 LeetCode 中文站题目详情响应失败")?;
 
+    // 把外部接口响应转换成项目内部更好使用的结构。
     Ok(DailyQuestion {
         date: today.date,
         link: format!("/problems/{}/", question_resp.data.question.title_slug),

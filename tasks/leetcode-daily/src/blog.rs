@@ -4,6 +4,7 @@ use regex::{Captures, Regex};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// 把每日一题和题解写成一篇博客 MDX 文件。
 pub fn write_blog_post(
     project_root: &Path,
     daily: &DailyQuestion,
@@ -23,6 +24,7 @@ pub fn write_blog_post(
     Ok(output_path)
 }
 
+/// 组装完整博客内容：frontmatter、原题链接、题目描述和题解分析。
 fn render_blog_post(daily: &DailyQuestion, solution: &str) -> String {
     let frontmatter = format!(
         "---\ntitle: 'LeetCode: {}'\ndate: '{}'\ntags: ['LeetCode', '算法']\ndraft: false\nsummary: '自动生成的 LeetCode 每日一题题解'\n---\n\n",
@@ -39,6 +41,7 @@ fn render_blog_post(daily: &DailyQuestion, solution: &str) -> String {
     )
 }
 
+/// 将 LeetCode 返回的 HTML 片段转换成博客更容易渲染的 Markdown/MDX。
 fn format_leetcode_content(content: &str) -> String {
     let content = sanitize_leetcode_html(content);
     let content = convert_images(&content);
@@ -50,6 +53,7 @@ fn format_leetcode_content(content: &str) -> String {
     collapse_blank_lines(&content)
 }
 
+/// 清理 LeetCode HTML 中对博客无用或容易影响样式的内容。
 fn sanitize_leetcode_html(content: &str) -> String {
     let content = content
         .replace("&nbsp;", " ")
@@ -61,6 +65,7 @@ fn sanitize_leetcode_html(content: &str) -> String {
     strip_html_attribute(&strip_html_attribute(&content, "class"), "style")
 }
 
+/// 把 HTML 图片标签转换成 MDX 的 `<Image />` 组件。
 fn convert_images(content: &str) -> String {
     let re = Regex::new(r#"<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>"#).unwrap();
 
@@ -71,6 +76,7 @@ fn convert_images(content: &str) -> String {
     .into_owned()
 }
 
+/// 把 `<pre>...</pre>` 示例块转换成 Markdown 代码块。
 fn convert_pre_blocks(content: &str) -> String {
     replace_blocks(content, "<pre>", "</pre>", |inner| {
         let text = inline_html_to_text(inner).trim().to_string();
@@ -78,6 +84,7 @@ fn convert_pre_blocks(content: &str) -> String {
     })
 }
 
+/// 把 `<ul><li>...</li></ul>` 转换成 Markdown 列表。
 fn convert_list_blocks(content: &str) -> String {
     replace_blocks(content, "<ul>", "</ul>", |inner| {
         let mut items = Vec::new();
@@ -98,6 +105,7 @@ fn convert_list_blocks(content: &str) -> String {
     })
 }
 
+/// 把 HTML 段落转换成 Markdown 段落。
 fn convert_paragraphs(content: &str) -> String {
     replace_blocks(content, "<p>", "</p>", |inner| {
         let markdown = inline_html_to_markdown(inner).trim().to_string();
@@ -109,6 +117,9 @@ fn convert_paragraphs(content: &str) -> String {
     })
 }
 
+/// 通用块替换函数。
+///
+/// `F: FnMut(&str) -> String` 表示调用方传进来一个“如何转换块内部内容”的函数。
 fn replace_blocks<F>(content: &str, open: &str, close: &str, mut convert: F) -> String
 where
     F: FnMut(&str) -> String,
@@ -132,6 +143,7 @@ where
     output
 }
 
+/// 转换行内 HTML 标签，保留 Markdown 能表达的强调、代码等语义。
 fn inline_html_to_markdown(content: &str) -> String {
     decode_html_entities(content)
         .replace("<code>", "`")
@@ -146,6 +158,7 @@ fn inline_html_to_markdown(content: &str) -> String {
         .to_string()
 }
 
+/// 转换为纯文本，主要用于代码块内部，避免 Markdown 符号污染示例输出。
 fn inline_html_to_text(content: &str) -> String {
     decode_html_entities(content)
         .replace("<strong>", "")
@@ -160,6 +173,7 @@ fn inline_html_to_text(content: &str) -> String {
         .to_string()
 }
 
+/// 解码常见 HTML 实体，例如 `&lt;` 转成 `<`。
 fn decode_html_entities(content: &str) -> String {
     content
         .replace("&nbsp;", " ")
@@ -170,6 +184,9 @@ fn decode_html_entities(content: &str) -> String {
         .replace("&#39;", "'")
 }
 
+/// 移除指定 HTML 属性。
+///
+/// 这里不用正则，是为了同时处理单引号和双引号，并保留其它标签内容。
 fn strip_html_attribute(content: &str, attr_name: &str) -> String {
     let mut output = String::with_capacity(content.len());
     let mut rest = content;
@@ -193,6 +210,7 @@ fn strip_html_attribute(content: &str, attr_name: &str) -> String {
     output
 }
 
+/// 找出下一个指定属性的位置，并返回属性值使用的引号类型。
 fn find_next_attribute(
     content: &str,
     double_quoted: &str,
@@ -217,6 +235,7 @@ fn find_next_attribute(
     }
 }
 
+/// 清理模型生成的 Markdown，使它能自然嵌入博客正文。
 fn normalize_solution_markdown(content: &str) -> String {
     let mut lines = content.trim().lines().peekable();
     if matches!(lines.peek(), Some(line) if line.trim_start().starts_with("# ")) {
@@ -243,6 +262,7 @@ fn normalize_solution_markdown(content: &str) -> String {
     collapse_blank_lines(&without_rules)
 }
 
+/// 合并多余空行，避免生成的 MDX 出现大片空白。
 fn collapse_blank_lines(content: &str) -> String {
     let mut output = Vec::new();
     let mut blank_count = 0;

@@ -4,14 +4,19 @@ use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// 当天题目缓存路径，例如 `data/leetcode-daily/questions/2026-04-29.json`。
 pub fn question_cache_path(cache_root: &Path, date: &str) -> PathBuf {
     cache_root.join("questions").join(format!("{date}.json"))
 }
 
+/// 当天题解缓存路径，例如 `data/leetcode-daily/solutions/2026-04-29.json`。
 pub fn solution_cache_path(cache_root: &Path, date: &str) -> PathBuf {
     cache_root.join("solutions").join(format!("{date}.json"))
 }
 
+/// 读取 JSON 缓存。
+///
+/// 返回 `Ok(None)` 表示文件不存在；返回 `Ok(Some(value))` 表示读取并解析成功。
 pub fn read_json<T: DeserializeOwned>(path: &Path) -> Result<Option<T>> {
     if !path.exists() {
         return Ok(None);
@@ -25,6 +30,9 @@ pub fn read_json<T: DeserializeOwned>(path: &Path) -> Result<Option<T>> {
     Ok(Some(value))
 }
 
+/// 将任意可序列化的值写入 JSON 缓存。
+///
+/// 泛型约束 `T: Serialize` 表示 `value` 必须能被 `serde_json` 转成 JSON。
 pub fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)

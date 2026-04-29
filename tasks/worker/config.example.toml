@@ -1,0 +1,11 @@
+[[jobs]]
+name = "leetcode_daily"
+cron = "0 8 * * *"
+package = "leetcode-daily"
+args = []
+
+[[jobs]]
+name = "fetch_daily_info"
+cron = "30 8 * * *"
+package = "fetch-daily-info"
+args = []

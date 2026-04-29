@@ -55,3 +55,4 @@ tsconfig.tsbuildinfo
 
 # LeetCode daily runtime cache
 /data/leetcode-daily/
+**/target/*

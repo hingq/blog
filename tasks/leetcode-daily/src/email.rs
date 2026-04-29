@@ -4,6 +4,9 @@ use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 use std::env;
 
+/// 发送每日一题邮件通知。
+///
+/// 邮箱账号、密码、收件人从环境变量读取；SMTP 服务器默认使用 Gmail。
 pub fn send_email(question: &DailyQuestion) -> Result<()> {
     let email_user = env::var("EMAIL_USER").context("环境变量 EMAIL_USER 未设置")?;
     let email_pass = env::var("EMAIL_PASS").context("环境变量 EMAIL_PASS 未设置")?;
@@ -23,6 +26,7 @@ pub fn send_email(question: &DailyQuestion) -> Result<()> {
             question.question.content
         ))?;
 
+    // `Credentials` 会在 SMTP 登录时使用，`SmtpTransport` 负责真正发信。
     let creds = Credentials::new(email_user, email_pass);
     let mailer = SmtpTransport::relay(&smtp_host)?.credentials(creds).build();
 

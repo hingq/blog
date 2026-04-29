@@ -3,6 +3,10 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// 推断项目根目录。
+///
+/// 当程序从 `leetcode-daily` 子目录运行时，需要回到 workspace 根目录，
+/// 这样后续写入 `data/blog`、读取 `.env` 时路径才一致。
 pub fn project_root() -> Result<PathBuf> {
     let mut base_dir = env::current_dir()?;
     if base_dir.ends_with("leetcode-daily") {
@@ -13,10 +17,14 @@ pub fn project_root() -> Result<PathBuf> {
     Ok(base_dir)
 }
 
+/// LeetCode 每日任务的缓存根目录。
 pub fn cache_root(project_root: &Path) -> PathBuf {
     project_root.join("data").join("leetcode-daily")
 }
 
+/// 解析 `.env` 文件中的一行。
+///
+/// 支持 `KEY=value`、空行和注释；返回 `None` 表示这一行不需要设置环境变量。
 pub fn parse_env_line(line: &str) -> Option<(&str, &str)> {
     let line = line.trim();
     if line.is_empty() || line.starts_with('#') {
@@ -30,6 +38,9 @@ pub fn parse_env_line(line: &str) -> Option<(&str, &str)> {
     ))
 }
 
+/// 加载本地 `.env` 文件。
+///
+/// 如果同名环境变量已经存在，就保留已有值，避免覆盖 CI 或命令行传入的配置。
 pub fn load_dotenv(path: &Path) -> Result<()> {
     if !path.exists() {
         return Ok(());
