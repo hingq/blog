@@ -76,7 +76,7 @@ jobs:
           YARN_HTTPS_PROXY: ""
           http_proxy: ""
           https_proxy: ""
-        run: yarn install --immutable --immutable-cache
+        run: yarn install --immutable
 
       - name: Commit and Push to main
         run: |
