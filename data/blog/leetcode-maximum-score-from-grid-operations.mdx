@@ -58,114 +58,106 @@ summary: '自动生成的 LeetCode 每日一题题解'
 
 ## 题解分析
 
+这是一个经典的网格图动态规划问题。由于 $n$ 的规模较小 ($n \le 100$)，我们可以考虑一个复杂度在 $O(n^3)$ 到 $O(n^4)$ 之间的动态规划方案。
+
 ### 解题思路分析
 
-#### 1. 题目建模
-*   **状态定义**：每一列 $j$ 涂黑的高度 $h_j \in [0, n]$（表示从第 0 行到第 $h_j-1$ 行涂黑）。
-*   **得分条件**：格子 $(i, j)$ 贡献分数的前提是它为白色（$i \ge h_j$），且左邻 $(i, j-1)$ 或右邻 $(i, j+1)$ 至少有一个是黑色。
-*   **得分公式**：对于第 $j$ 列，其贡献的总分为 $\text{grid}[h_j \dots \max(h_{j-1}, h_{j+1})-1][j]$。即第 $j$ 列的得分取决于它自身的高度以及左右相邻两列的高度。
-*   **总分**：$\sum_{j=0}^{n-1} \max(0, \text{PreSum}(j, \max(h_{j-1}, h_{j+1})) - \text{PreSum}(j, h_j))$，其中 $\text{PreSum}(j, h)$ 表示第 $j$ 列前 $h$ 个元素的和。为了处理边界，可以设 $h_{-1} = 0, h_n = 0$。
+**1. 题目建模**
+每个列 $j$ 可以选择一个高度 $h_j \in [0, n]$，将该列的前 $h_j$ 个格子染成黑色。
+一个格子 $(i, j)$ 能得分的条件是：
+- 该格子是白色的：即 $i \ge h_j$。
+- 其左邻居或右邻居至少有一个是黑色的：即 $i < h_{j-1}$ 或 $i < h_{j+1}$。
 
-#### 2. 动态规划设计
-我们需要逐列处理，但在处理第 $j$ 列时，它的得分取决于 $h_{j-1}$ 和 $h_{j+1}$。为了消除这种“未来依赖”，我们可以将得分的计算逻辑挂载在第 $j-1$ 列上。
+因此，第 $j$ 列的得分总和为：
+$$\sum_{i=h_j}^{\max(h_{j-1}, h_{j+1}) - 1} \text{grid}[i][j]$$
+注意：如果 $h_j \ge \max(h_{j-1}, h_{j+1})$，则该列得分为 0。
 
-定义 $dp[j][c][p]$ 为处理完前 $j$ 列后，且第 $j$ 列高度为 $c$，第 $j-1$ 列高度为 $p$ 时的最大总分。
-当从 $dp[j-1][p][k]$ 转移到 $dp[j][c][p]$ 时，我们实际上确定了第 $j-1$ 列的左右邻居高度（左邻为 $k$，右邻为 $c$）。
-此时，第 $j-1$ 列增加的分数为：
-$$\text{Score}(j-1, p, k, c) = \max(0, \text{PreSum}(j-1, \max(k, c)) - \text{PreSum}(j-1, p))$$
+**2. 动态规划状态设计**
+我们需要逐列决定高度。观察发现，第 $j$ 列的得分取决于 $h_{j-1}, h_j, h_{j+1}$。为了在处理第 $j$ 列时计算其得分，我们需要知道前一列的高度和当前列的高度，并预留对后一列高度的影响。
 
-#### 3. 状态转移优化
-基础转移方程：
-$dp[j][c][p] = \max_{0 \le k \le n} \{ dp[j-1][p][k] + \text{Score}(j-1, p, k, c) \}$
+定义 $dp[i][curr][prev]$ 为：处理完前 $i$ 列，且第 $i$ 列高度为 $curr$，第 $i-1$ 列高度为 $prev$ 时能获得的最大分数。
+此时，我们已经可以确定的分数包括：
+- 前 $i-1$ 列的所有得分。
+- 第 $i$ 列由其左邻居 $h_{i-1}$ 贡献的得分。
 
-直接转移的时间复杂度为 $O(n^4)$，由于 $n=100$，需要优化到 $O(n^3)$。
-观察 $\text{Score}$ 的公式，对于固定的 $j, p, c$，我们可以根据 $k$ 与 $c$ 和 $p$ 的关系进行拆解：
-*   **若 $c > p$**:
-    *   当 $k \le c$ 时：$\max(k, c) = c$，得分 $= \text{PreSum}(j-1, c) - \text{PreSum}(j-1, p)$。
-    *   当 $k > c$ 时：$\max(k, c) = k$，得分 $= \text{PreSum}(j-1, k) - \text{PreSum}(j-1, p)$（因为 $k > c > p$）。
-*   **若 $c \le p$**:
-    *   当 $k \le p$ 时：$\max(k, c) \le p$，得分 $= 0$。
-    *   当 $k > p$ 时：$\max(k, c) = k$，得分 $= \text{PreSum}(j-1, k) - \text{PreSum}(j-1, p)$。
+当我们从第 $i$ 列转移到 $i+1$ 列，并选择第 $i+1$ 列的高度为 $next$ 时，会增加：
+- 第 $i+1$ 列由于左邻居 $h_i$ 产生的得分。
+- 第 $i$ 列由于右邻居 $h_{i+1}$ 产生、且之前未被左邻居 $h_{i-1}$ 覆盖的额外得分。
 
-通过维护 $dp[j-1][p][k]$ 的**前缀最大值**和 $dp[j-1][p][k] + \text{PreSum}(j-1, k)$ 的**后缀最大值**，可以在 $O(1)$ 时间内完成上述转移。
+**3. 转移方程与优化**
+设 $S(col, row, target\_h)$ 为第 $col$ 列中，从行 $row$ 到 $target\_h-1$ 的元素和。
+$$dp[i+1][next][curr] = \max_{prev} \{ dp[i][curr][prev] + S(i+1, next, curr) + \max(0, S(i, curr, next) - S(i, curr, prev)) \}$$
+
+直接计算是 $O(n^4)$。我们可以观察到，对于固定的 $curr$ 和 $next$，$\max$ 内部只有 $S(i, curr, next) - S(i, curr, prev)$ 这一项与 $prev$ 相关。
+利用 $S$ 函数的单调性，我们可以通过维护前缀和后缀最大值，将转移优化到 $O(1)$，从而总复杂度降为 $O(n^3)$。
 
 ### 复杂度分析
-*   **时间复杂度**：$O(n^3)$。共有 $n$ 列，每列有 $n^2$ 个状态，每个状态通过预处理后的 $O(1)$ 转移。
-*   **空间复杂度**：$O(n^2)$。使用滚动数组优化，仅需保存两列的状态空间。
+- **时间复杂度**: $O(n^3)$。我们需要遍历 $n$ 列，每列遍历当前高度和前一高度（$n^2$），内部优化后转移为 $O(1)$。
+- **空间复杂度**: $O(n^2)$。只需要存储当前列和前一列的 DP 状态。
 
 ### 代码实现 (Python)
 
 ```python
 class Solution:
-    def maximumScore(self, grid: List[List[int]]) -> int:
+    def maxScore(self, grid: List[List[int]]) -> int:
         n = len(grid)
-        # 预计算每一列的前缀和
-        ps = [[0] * (n + 1) for _ in range(n)]
+        # 预计算每一列的前缀和，方便快速求出 S(col, row, target_h)
+        pref = [[0] * n for _ in range(n + 1)]
         for j in range(n):
             for i in range(n):
-                ps[j][i + 1] = ps[j][i] + grid[i][j]
+                pref[i + 1][j] = pref[i][j] + grid[i][j]
 
-        # dp[c][p] 表示当前列高度为 c，前一列高度为 p 时的最大分数
-        # 初始化：对于第0列，前一列(假想的第-1列)高度为0
-        dp = [[-1] * (n + 1) for _ in range(n + 1)]
-        for c in range(n + 1):
-            dp[c][0] = 0
+        # 计算列 col 在高度为 row 时，受邻居高度 target_h 影响获得的得分
+        def get_S(col, row, target_h):
+            if col < 0 or col >= n or target_h <= row:
+                return 0
+            return pref[target_h][col] - pref[row][col]
 
-        # 预分配辅助数组以优化速度
-        pref_dp = [-1] * (n + 1)
-        suff_dp_ps = [-1] * (n + 2)
+        # dp[curr_h][prev_h] 表示当前列高度为 curr_h，前一列高度为 prev_h 时的最大分数
+        dp = [[0] * (n + 1) for _ in range(n + 1)]
 
-        # 遍历每一列，j表示当前正在考虑的列，计算 j-1 列的贡献
-        for j in range(1, n + 1):
-            new_dp = [[-1] * (n + 1) for _ in range(n + 1)]
-            ps_idx = j - 1 # 当前计算贡献的列索引
-            curr_ps = ps[ps_idx]
+        # 遍历每一列，多走一列（到 n）是为了结算最后一列受右侧（高度0）影响后的得分
+        for i in range(n + 1):
+            new_dp = [[0] * (n + 1) for _ in range(n + 1)]
+            for curr in range(n + 1):
+                # 优化 O(n^4) 到 O(n^3)
+                # 我们需要计算 max_prev (dp[curr][prev] + max(0, S(i-1, curr, next) - S(i-1, curr, prev)))
 
-            for p in range(n + 1):
-                # p 是第 j-1 列的高度，我们需要通过 k (j-2列高度) 进行转移
-                row_prev = dp[p]
+                # 预计算两部分：
+                # 1. 当 S(i-1, curr, prev) >= S(i-1, curr, next) 时，取 dp[curr][prev] 的最大值
+                # 2. 当 S(i-1, curr, prev) < S(i-1, curr, next) 时，取 dp[curr][prev] - S(i-1, curr, prev) 的最大值
 
-                # 预计算前缀最大 dp[p][k]
-                curr_max = -1
-                for k in range(n + 1):
-                    if row_prev[k] > curr_max: curr_max = row_prev[k]
-                    pref_dp[k] = curr_max
+                # 针对固定 curr，计算所有可能 prev 的辅助数组
+                f_p = dp[curr]
+                g_p = [get_S(i - 1, curr, p) for p in range(n + 1)]
 
-                # 预计算后缀最大 dp[p][k] + PreSum(j-1, k)
-                curr_max = -1
-                for k in range(n, -1, -1):
-                    if row_prev[k] != -1:
-                        val = row_prev[k] + curr_ps[k]
-                        if val > curr_max: curr_max = val
-                    suff_dp_ps[k] = curr_max
+                # res_a[v] = max_{p >= v} f(p)
+                res_a = [0] * (n + 1)
+                cur_max_a = -1
+                for p in range(n, -1, -1):
+                    cur_max_a = max(cur_max_a, f_p[p])
+                    res_a[p] = cur_max_a
 
-                ps_p = curr_ps[p]
+                # res_b[v] = max_{p < v} (f(p) - g(p))
+                res_b = [0] * (n + 1)
+                cur_max_b = -float('inf')
+                for p in range(n + 1):
+                    res_b[p] = cur_max_b
+                    cur_max_b = max(cur_max_b, f_p[p] - g_p[p])
 
-                # 优化：当 c <= p 时，结果与 c 无关，统一计算
-                val_le_p = -1
-                if pref_dp[p] != -1:
-                    val_le_p = pref_dp[p]
-                if suff_dp_ps[p + 1] != -1:
-                    tmp = suff_dp_ps[p + 1] - ps_p
-                    if tmp > val_le_p: val_le_p = tmp
-
-                for c in range(n + 1):
-                    if c <= p:
-                        new_dp[c][p] = val_le_p
-                    else:
-                        # c > p 分支
-                        res = -1
-                        # Case k <= c: max(k, c) = c
-                        if pref_dp[c] != -1:
-                            res = pref_dp[c] + curr_ps[c] - ps_p
-                        # Case k > c: max(k, c) = k
-                        if suff_dp_ps[c + 1] != -1:
-                            tmp = suff_dp_ps[c + 1] - ps_p
-                            if tmp > res: res = tmp
-                        new_dp[c][p] = res
+                for next_h in range(n + 1):
+                    g_v = get_S(i - 1, curr, next_h)
+                    # 状态转移
+                    term = max(res_a[next_h], g_v + res_b[next_h])
+                    new_dp[next_h][curr] = get_S(i, next_h, curr) + term
             dp = new_dp
 
-        # 最终第 n 列是假想的，其高度 c 必须为 0
+        # 最终结果是在处理完所有列后，虚拟的第 n 列高度为 0 时的最大值
         return max(dp[0])
 
 ```
+
+### 解题要点
+1. **虚拟边界**：通过引入第 $n$ 列且高度固定为 0，可以统一处理最后一列的得分逻辑。
+2. **贡献拆分**：将每一列的得分拆分为“左侧贡献”和“右侧额外贡献”，避免了复杂的 $\max(h_{j-1}, h_{j+1})$ 讨论。
+3. **单调性优化**：利用高度增加则得分增加的单调性，将内层循环从 $O(n^2)$ 优化至 $O(n)$。
