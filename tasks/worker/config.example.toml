@@ -1,11 +1,17 @@
+# 仅生产环境使用。启动时设置 TASK_ENV=production 后，worker 会从这里找任务二进制。
+# 开发环境不需要配置执行目录，worker 会自动 cargo build 一次。
+binary_dir = "/blog/tasks/packages"
+
 [[jobs]]
 name = "leetcode_daily"
+enabled = true
 cron = "0 8 * * *"
 package = "leetcode-daily"
 args = []
 
 [[jobs]]
 name = "fetch_daily_info"
+enabled = false
 cron = "30 8 * * *"
 package = "fetch-daily-info"
 args = []

@@ -84,6 +84,10 @@ impl Workspace {
         self.packages.get(package)
     }
 
+    pub fn root(&self) -> &Path {
+        &self.root
+    }
+
     /// release 构建后的二进制路径。
     pub fn binary_path(&self, package: &WorkspacePackage) -> PathBuf {
         let binary_name = format!("{}{}", package.bin_name, std::env::consts::EXE_SUFFIX);

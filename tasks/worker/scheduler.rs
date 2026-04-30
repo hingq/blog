@@ -3,60 +3,24 @@ use crate::log::{log, LogLevel};
 use anyhow::{Context, Result};
 use chrono::{DateTime, Local};
 use croner::Cron;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
 /// 调度器内部使用的任务状态。
-///
-/// `running` 用来标记任务是否还在执行，避免同一个任务重叠运行。
 #[derive(Debug)]
 struct ScheduledJob {
     job: ResolvedJob,
     cron: Cron,
     next_run: DateTime<Local>,
-    running: Arc<AtomicBool>,
-}
-
-/// 尝试启动任务时的结果。
-#[derive(Debug, PartialEq, Eq)]
-enum StartDecision {
-    Started,
-    SkippedAlreadyRunning,
-}
-
-/// 用原子变量把任务状态从“未运行”改成“运行中”。
-///
-/// `compare_exchange` 可以避免多个线程同时把同一个任务启动两次。
-fn try_mark_job_started(running: &AtomicBool) -> StartDecision {
-    match running.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
-        Ok(_) => StartDecision::Started,
-        Err(_) => StartDecision::SkippedAlreadyRunning,
-    }
 }
 
 /// 在新线程中运行任务。
-///
-/// 任务结束后必须把 `running` 改回 `false`，否则之后的触发都会被跳过。
-fn spawn_job(job: ResolvedJob, running: Arc<AtomicBool>, level: LogLevel) {
-    match try_mark_job_started(&running) {
-        StartDecision::Started => {
-            thread::spawn(move || {
-                if let Err(err) = run_job_once(&job, level) {
-                    log(level, LogLevel::Error, &format!("{:?}", err));
-                }
-                running.store(false, Ordering::SeqCst);
-            });
+fn spawn_job(job: ResolvedJob, level: LogLevel) {
+    thread::spawn(move || {
+        if let Err(err) = run_job_once(&job, level) {
+            log(level, LogLevel::Error, &format!("{:?}", err));
         }
-        StartDecision::SkippedAlreadyRunning => {
-            log(
-                level,
-                LogLevel::Warn,
-                &format!("任务仍在运行，跳过本次触发: {}", job.name),
-            );
-        }
-    }
+    });
 }
 
 /// 根据 cron 表达式计算每个任务的下一次运行时间。
@@ -74,7 +38,6 @@ fn build_schedule(jobs: Vec<ResolvedJob>) -> Result<Vec<ScheduledJob>> {
                 job,
                 cron,
                 next_run,
-                running: Arc::new(AtomicBool::new(false)),
             })
         })
         .collect()
@@ -97,7 +60,7 @@ pub fn start_scheduler(jobs: Vec<ResolvedJob>, level: LogLevel) -> Result<()> {
         let now = Local::now();
         for scheduled in &mut schedule {
             if scheduled.next_run <= now {
-                spawn_job(scheduled.job.clone(), Arc::clone(&scheduled.running), level);
+                spawn_job(scheduled.job.clone(), level);
                 scheduled.next_run = scheduled
                     .cron
                     .find_next_occurrence(&now, false)
@@ -130,23 +93,22 @@ pub fn start_scheduler(jobs: Vec<ResolvedJob>, level: LogLevel) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
 
     #[test]
-    fn running_job_is_skipped_instead_of_started_again() {
-        let running = AtomicBool::new(true);
+    fn schedule_does_not_track_running_state() {
+        let jobs = vec![ResolvedJob {
+            name: "test".to_string(),
+            cron: "0 8 * * *".to_string(),
+            package: "test-package".to_string(),
+            binary_path: PathBuf::from("/bin/test"),
+            working_dir: PathBuf::from("/tmp"),
+            args: Vec::new(),
+            env: Default::default(),
+        }];
 
-        assert_eq!(
-            try_mark_job_started(&running),
-            StartDecision::SkippedAlreadyRunning
-        );
-        assert!(running.load(Ordering::SeqCst));
-    }
+        let schedule = build_schedule(jobs).unwrap();
 
-    #[test]
-    fn idle_job_is_marked_running() {
-        let running = AtomicBool::new(false);
-
-        assert_eq!(try_mark_job_started(&running), StartDecision::Started);
-        assert!(running.load(Ordering::SeqCst));
+        assert_eq!(schedule.len(), 1);
     }
 }

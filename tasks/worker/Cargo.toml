@@ -12,5 +12,6 @@ anyhow = { workspace = true }
 chrono = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 croner = "2.2"
+libc = "0.2"
 serde = { workspace = true }
 toml = "0.8"
