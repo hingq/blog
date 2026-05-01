@@ -1,11 +1,11 @@
 binary_dir = "/blog/tasks/packages"
 
-# [[jobs]]
-# name = "leetcode_daily"
-# enabled = true
-# cron = "0 8 * * *"
-# package = "leetcode-daily"
-# args = []
+[[jobs]]
+name = "leetcode_daily"
+enabled = true
+cron = "0 8 * * *"
+package = "leetcode-daily"
+args = []
 
 [[jobs]]
 name = "fetch_daily_info"
