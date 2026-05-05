@@ -1,4 +1,7 @@
-use crate::models::{DailyQuestion, QuestionResponse, TodayRecordResponse};
+use crate::models::{
+    DailyQuestion, QuestionResponse, SolutionArticle, SolutionArticleResponse,
+    SolutionArticleSummary, SolutionArticlesResponse, TodayRecordResponse,
+};
 use anyhow::{Context, Result};
 
 /// 从 LeetCode 中文站获取每日一题。
@@ -71,9 +74,106 @@ pub async fn fetch_daily_question() -> Result<DailyQuestion> {
     })
 }
 
+/// 从 LeetCode 中文站获取指定题目的官方题解。
+///
+/// 中文站题解需要先查文章列表，再用文章 slug 查询正文。
+pub async fn fetch_official_solution(title_slug: &str) -> Result<Option<SolutionArticle>> {
+    let client = reqwest::Client::new();
+    fetch_official_solution_with_client(&client, title_slug).await
+}
+
+async fn fetch_official_solution_with_client(
+    client: &reqwest::Client,
+    title_slug: &str,
+) -> Result<Option<SolutionArticle>> {
+    let articles_query = r#"
+        query questionSolutionArticles($questionSlug: String!, $first: Int!) {
+          questionSolutionArticles(
+            questionSlug: $questionSlug
+            first: $first
+            orderBy: DEFAULT
+          ) {
+            edges {
+              node {
+                title
+                slug
+                canSee
+                byLeetcode
+              }
+            }
+          }
+        }
+    "#;
+
+    let articles_resp: SolutionArticlesResponse = client
+        .post("https://leetcode.cn/graphql")
+        .json(&serde_json::json!({
+            "query": articles_query,
+            "variables": {
+                "questionSlug": title_slug,
+                "first": 10
+            }
+        }))
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await
+        .context("解析 LeetCode 中文站题解列表响应失败")?;
+
+    let Some(article) = select_official_solution_article(
+        articles_resp
+            .data
+            .question_solution_articles
+            .edges
+            .into_iter()
+            .map(|edge| edge.node),
+    ) else {
+        return Ok(None);
+    };
+
+    let article_query = r#"
+        query solutionArticle($slug: String!) {
+          solutionArticle(slug: $slug, orderBy: DEFAULT) {
+            title
+            slug
+            content
+          }
+        }
+    "#;
+
+    let article_resp: SolutionArticleResponse = client
+        .post("https://leetcode.cn/graphql")
+        .json(&serde_json::json!({
+            "query": article_query,
+            "variables": { "slug": article.slug }
+        }))
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await
+        .context("解析 LeetCode 中文站官方题解响应失败")?;
+
+    Ok(Some(article_resp.data.solution_article))
+}
+
+fn select_official_solution_article<I>(articles: I) -> Option<SolutionArticleSummary>
+where
+    I: IntoIterator<Item = SolutionArticleSummary>,
+{
+    articles
+        .into_iter()
+        .find(|article| article.can_see && article.by_leetcode)
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::models::{Question, TodayRecordResponse};
+    use super::select_official_solution_article;
+    use crate::models::{
+        Question, SolutionArticleResponse, SolutionArticleSummary, SolutionArticlesResponse,
+        TodayRecordResponse,
+    };
 
     #[test]
     fn deserializes_chinese_question_fields() {
@@ -114,5 +214,83 @@ mod tests {
             resp.data.today_record[0].question.title_slug,
             "minimum-operations-to-make-a-uni-value-grid"
         );
+    }
+
+    #[test]
+    fn deserializes_solution_articles_response() {
+        let json = r#"{
+            "data": {
+                "questionSolutionArticles": {
+                    "edges": [
+                        {
+                            "node": {
+                                "title": "官方题解",
+                                "slug": "two-sum-solution",
+                                "canSee": true,
+                                "byLeetcode": true
+                            }
+                        }
+                    ]
+                }
+            }
+        }"#;
+
+        let resp: SolutionArticlesResponse = serde_json::from_str(json).unwrap();
+        let article = &resp.data.question_solution_articles.edges[0].node;
+
+        assert_eq!(article.slug, "two-sum-solution");
+        assert!(article.can_see);
+        assert!(article.by_leetcode);
+    }
+
+    #[test]
+    fn selects_visible_leetcode_solution_article() {
+        let selected = select_official_solution_article(vec![
+            SolutionArticleSummary {
+                title: "社区题解".to_string(),
+                slug: "community".to_string(),
+                can_see: true,
+                by_leetcode: false,
+            },
+            SolutionArticleSummary {
+                title: "官方题解".to_string(),
+                slug: "official".to_string(),
+                can_see: true,
+                by_leetcode: true,
+            },
+        ])
+        .unwrap();
+
+        assert_eq!(selected.slug, "official");
+    }
+
+    #[test]
+    fn returns_none_without_visible_leetcode_solution_article() {
+        let selected = select_official_solution_article(vec![SolutionArticleSummary {
+            title: "隐藏官方题解".to_string(),
+            slug: "hidden".to_string(),
+            can_see: false,
+            by_leetcode: true,
+        }]);
+
+        assert!(selected.is_none());
+    }
+
+    #[test]
+    fn deserializes_solution_article_response() {
+        let json = r#"{
+            "data": {
+                "solutionArticle": {
+                    "title": "两数之和官方题解",
+                    "slug": "two-sum-solution",
+                    "content": "<p>使用哈希表。</p>"
+                }
+            }
+        }"#;
+
+        let resp: SolutionArticleResponse = serde_json::from_str(json).unwrap();
+
+        assert_eq!(resp.data.solution_article.title, "两数之和官方题解");
+        assert_eq!(resp.data.solution_article.content, "<p>使用哈希表。</p>");
     }
 }

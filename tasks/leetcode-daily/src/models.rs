@@ -59,13 +59,82 @@ pub struct Question {
     pub difficulty: String,
 }
 
-/// Gemini 生成题解后的缓存格式。
-///
-/// 缓存中记录模型名称，方便之后排查“这篇题解由哪个模型生成”。
+/// 官方题解缓存格式。
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SolutionCache {
     pub date: String,
     pub title_slug: String,
-    pub model: String,
     pub content: String,
+}
+
+/// LeetCode 中文站题解文章列表响应。
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SolutionArticlesResponse {
+    pub data: SolutionArticlesData,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SolutionArticlesData {
+    #[serde(rename = "questionSolutionArticles")]
+    pub question_solution_articles: SolutionArticleConnection,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SolutionArticleConnection {
+    pub edges: Vec<SolutionArticleEdge>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SolutionArticleEdge {
+    pub node: SolutionArticleSummary,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SolutionArticleSummary {
+    pub title: String,
+    pub slug: String,
+    #[serde(rename = "canSee")]
+    pub can_see: bool,
+    #[serde(rename = "byLeetcode")]
+    pub by_leetcode: bool,
+}
+
+/// LeetCode 中文站题解文章详情响应。
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SolutionArticleResponse {
+    pub data: SolutionArticleData,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SolutionArticleData {
+    #[serde(rename = "solutionArticle")]
+    pub solution_article: SolutionArticle,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SolutionArticle {
+    pub title: String,
+    pub slug: String,
+    pub content: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SolutionCache;
+
+    #[test]
+    fn reads_legacy_solution_cache_with_model_field() {
+        let json = r#"{
+            "date": "2026-04-28",
+            "title_slug": "two-sum",
+            "model": "gemini-2.5-flash",
+            "content": "题解内容"
+        }"#;
+
+        let cache: SolutionCache = serde_json::from_str(json).unwrap();
+
+        assert_eq!(cache.date, "2026-04-28");
+        assert_eq!(cache.title_slug, "two-sum");
+        assert_eq!(cache.content, "题解内容");
+    }
 }

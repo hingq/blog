@@ -39,19 +39,8 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('tasks/leetcode-daily/Cargo.toml') }}
 
-      - name: Validate runtime secrets
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          if [ -z "${GEMINI_API_KEY// }" ]; then
-            echo "GEMINI_API_KEY secret is missing or empty"
-            exit 1
-          fi
-          echo "GEMINI_API_KEY detected with length ${#GEMINI_API_KEY}"
-
       - name: Run Crawler & Publisher
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}

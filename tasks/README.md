@@ -42,26 +42,42 @@ args = []
 - `env`: 可选，任务进程环境变量。
 - `working_dir`: 可选，任务运行目录；相对路径以 package 目录为基准。
 
+## Worker 命令
+
+`worker` 的命令都使用位置参数，不需要加 `--` 分隔 Cargo 参数：
+
+```bash
+cargo run -p worker start
+cargo run -p worker list
+cargo run -p worker run fetch_daily_info
+```
+
+可用命令：
+
+- `start`: 启动调度器。
+- `list`: 列出全部配置任务，并显示 `enabled` 或 `disabled` 状态。
+- `run <name>`: 立即执行一次已启用任务。
+
+低频设置使用环境变量：
+
+- `WORKER_CONFIG`: 配置文件路径，默认 `worker/config.toml`。
+- `WORKER_LOG_LEVEL`: 日志级别，默认 `info`，可选 `error`、`warn`、`info`、`debug`。
+- `TASK_ENV`: 运行环境；设置为 `production` 时从 `binary_dir` 查找任务二进制，否则开发模式会自动构建已启用任务。
+
 ## 启动调度器
 
-开发环境直接从 workspace 根目录运行：
+开发环境从 `tasks/` workspace 根目录运行：
 
 ```bash
-cargo run -p worker -- start --foreground
+cargo run -p worker start
 ```
 
-`--foreground` 会以前台模式运行，适合本地调试，也适合交给 systemd、supervisor、pm2 等进程管理工具托管。开发模式下，调度器会自动执行 `cargo build --release -p <package>` 构建已启用任务。
+`start` 会以前台模式运行，适合本地调试，也适合交给 systemd、supervisor、pm2 等进程管理工具托管。开发模式下，调度器会自动执行 `cargo build --release -p <package>` 构建已启用任务。
 
-后台启动：
-
-```bash
-cargo run -p worker -- start
-```
-
-后台模式会重新拉起当前 `worker` 可执行文件，并输出 pid、日志文件和锁文件位置。日志文件在系统临时目录，文件名为：
+如果当前目录是仓库根目录，需要显式指定 `tasks/Cargo.toml`：
 
 ```bash
-worker-scheduler.log
+cargo run --manifest-path tasks/Cargo.toml -p worker start
 ```
 
 锁文件也在系统临时目录，文件名为：
@@ -93,69 +109,54 @@ cp target/release/leetcode-daily /blog/tasks/packages/
 然后以生产模式启动：
 
 ```bash
-TASK_ENV=production target/release/worker --config worker/config.toml start --foreground
-```
-
-后台启动：
-
-```bash
-TASK_ENV=production target/release/worker --config worker/config.toml start
+TASK_ENV=production target/release/worker start
 ```
 
 ## 常用命令
 
-查看已启用任务：
+本节命令默认在 `tasks/` 目录执行。如果在仓库根目录执行，给 Cargo 命令加上 `--manifest-path tasks/Cargo.toml`，例如：
 
 ```bash
-cargo run -p worker -- list
+cargo test --manifest-path tasks/Cargo.toml -p leetcode-daily
+cargo clippy --manifest-path tasks/Cargo.toml -p leetcode-daily --all-targets -- -D warnings
+cargo run --manifest-path tasks/Cargo.toml -p leetcode-daily --release
 ```
 
-查看全部任务，包括已关闭任务：
+查看全部任务：
 
 ```bash
-cargo run -p worker -- list --all
+cargo run -p worker list
 ```
 
-手动执行一次任务：
+输出会带上 `enabled` 或 `disabled` 状态。`list` 只读取配置，不会触发构建任务二进制。
+
+手动执行一次已启用任务：
 
 ```bash
-cargo run -p worker -- run fetch_daily_info
-```
-
-手动执行已关闭任务：
-
-```bash
-cargo run -p worker -- run --include-disabled leetcode_daily
+cargo run -p worker run fetch_daily_info
 ```
 
 指定配置文件：
 
 ```bash
-cargo run -p worker -- --config worker/config.toml list
+WORKER_CONFIG=worker/config.toml cargo run -p worker list
 ```
 
 指定日志级别：
 
 ```bash
-cargo run -p worker -- --log-level debug start --foreground
+WORKER_LOG_LEVEL=debug cargo run -p worker start
 ```
 
-可用日志级别：
+生产环境指定配置文件：
 
-- `error`
-- `warn`
-- `info`
-- `debug`
+```bash
+WORKER_CONFIG=worker/config.toml TASK_ENV=production target/release/worker start
+```
 
 ## 停止调度器
 
-前台模式用 `Ctrl+C` 停止。
-
-后台模式启动后会打印 pid，可以用该 pid 停止：
-
-```bash
-kill <pid>
-```
+前台运行时用 `Ctrl+C` 停止。交给 systemd、supervisor、pm2 等进程管理工具托管时，由对应工具停止进程。
 
 也可以通过锁文件查看当前 pid：
 
@@ -164,12 +165,6 @@ cat "$(dirname "$(mktemp -u)")/worker-scheduler.lock"
 ```
 
 ## 排查
-
-查看后台日志：
-
-```bash
-tail -f "$(dirname "$(mktemp -u)")/worker-scheduler.log"
-```
 
 如果提示生产二进制不存在，检查：
 

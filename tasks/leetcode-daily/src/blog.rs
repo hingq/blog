@@ -27,7 +27,7 @@ pub fn write_blog_post(
 /// 组装完整博客内容：frontmatter、原题链接、题目描述和题解分析。
 fn render_blog_post(daily: &DailyQuestion, solution: &str) -> String {
     let frontmatter = format!(
-        "---\ntitle: 'LeetCode: {}'\ndate: '{}'\ntags: ['LeetCode', '算法']\ndraft: false\nsummary: '自动生成的 LeetCode 每日一题题解'\n---\n\n",
+        "---\ntitle: 'LeetCode: {}'\ndate: '{}'\ntags: ['LeetCode', '算法']\ndraft: false\nsummary: 'LeetCode 每日一题官方题解'\n---\n\n",
         daily.question.title, daily.date
     );
 
@@ -37,8 +37,24 @@ fn render_blog_post(daily: &DailyQuestion, solution: &str) -> String {
         daily.question.title,
         daily.link,
         format_leetcode_content(&daily.question.content),
-        normalize_solution_markdown(solution)
+        format_solution_content(solution)
     )
+}
+
+/// 将官方题解正文转换成可嵌入博客的 Markdown/MDX。
+fn format_solution_content(content: &str) -> String {
+    if looks_like_html_fragment(content) {
+        normalize_solution_markdown(&format_leetcode_content(content))
+    } else {
+        normalize_solution_markdown(content)
+    }
+}
+
+fn looks_like_html_fragment(content: &str) -> bool {
+    let lower = content.to_ascii_lowercase();
+    ["<p", "<h2", "<h3", "<h4", "<pre", "<ul", "<ol", "<img"]
+        .iter()
+        .any(|tag| lower.contains(tag))
 }
 
 /// 将 LeetCode 返回的 HTML 片段转换成博客更容易渲染的 Markdown/MDX。
@@ -46,6 +62,7 @@ fn format_leetcode_content(content: &str) -> String {
     let content = sanitize_leetcode_html(content);
     let content = convert_images(&content);
     let content = convert_pre_blocks(&content);
+    let content = convert_heading_blocks(&content);
     let content = convert_list_blocks(&content);
     let content = convert_paragraphs(&content);
     let content = inline_html_to_markdown(&content);
@@ -82,6 +99,26 @@ fn convert_pre_blocks(content: &str) -> String {
         let text = inline_html_to_text(inner).trim().to_string();
         format!("\n\n```text\n{text}\n```\n\n")
     })
+}
+
+/// 把常见 HTML 标题转换成 Markdown 标题。
+fn convert_heading_blocks(content: &str) -> String {
+    let mut output = content.to_string();
+    for (tag, prefix) in [("h2", "###"), ("h3", "###"), ("h4", "####")] {
+        let re = Regex::new(&format!(r"(?s)<{tag}\b[^>]*>(.*?)</{tag}>")).unwrap();
+        output = re
+            .replace_all(&output, |caps: &Captures| {
+                let text = inline_html_to_markdown(&caps[1]).trim().to_string();
+                if text.is_empty() {
+                    String::new()
+                } else {
+                    format!("\n\n{prefix} {text}\n\n")
+                }
+            })
+            .into_owned();
+    }
+
+    output
 }
 
 /// 把 `<ul><li>...</li></ul>` 转换成 Markdown 列表。
@@ -326,6 +363,28 @@ mod tests {
     }
 
     #[test]
+    fn formats_official_solution_html() {
+        let html = r#"<h2>方法一</h2><p>使用 <code>HashMap</code>。</p><pre>代码</pre>"#;
+
+        let formatted = format_solution_content(html);
+
+        assert!(formatted.contains("### 方法一"));
+        assert!(formatted.contains("使用 `HashMap`。"));
+        assert!(formatted.contains("```text\n代码\n```"));
+        assert!(!formatted.contains("<h2>"));
+        assert!(!formatted.contains("<p>"));
+    }
+
+    #[test]
+    fn keeps_official_solution_markdown_with_angle_brackets() {
+        let markdown = "```C++\nvector<int> twoSum(vector<int>& nums) {}\n```";
+
+        let formatted = format_solution_content(markdown);
+
+        assert!(formatted.contains("vector<int> twoSum"));
+    }
+
+    #[test]
     fn renders_original_link_section() {
         let daily = DailyQuestion {
             date: "2026-04-28".to_string(),
@@ -340,6 +399,8 @@ mod tests {
 
         let content = render_blog_post(&daily, "### 解题思路\n\n内容");
 
+        assert!(content.contains("summary: 'LeetCode 每日一题官方题解'"));
+        assert!(!content.contains("自动生成"));
         assert!(
             content.contains("## 原文链接\n\n[两数之和](https://leetcode.cn/problems/two-sum/)")
         );

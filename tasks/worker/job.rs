@@ -14,7 +14,6 @@ use std::process::Command;
 pub struct ResolvedJob {
     pub name: String,
     pub cron: String,
-    pub package: String,
     pub binary_path: PathBuf,
     pub working_dir: PathBuf,
     pub args: Vec<String>,
@@ -138,7 +137,6 @@ where
         resolved.push(ResolvedJob {
             name: job.name.clone(),
             cron: job.cron.clone(),
-            package: job.package.clone(),
             binary_path,
             working_dir,
             args: job.args.clone(),
@@ -186,19 +184,6 @@ pub fn run_job_once(job: &ResolvedJob, level: LogLevel) -> Result<()> {
         Ok(())
     } else {
         anyhow::bail!("任务 {} 退出失败: {}", job.name, status)
-    }
-}
-
-/// 以制表符分隔输出任务列表，便于终端查看或脚本处理。
-pub fn list_jobs(jobs: &[ResolvedJob]) {
-    for job in jobs {
-        println!(
-            "{}\t{}\t{}\t{}",
-            job.name,
-            job.cron,
-            job.package,
-            job.binary_path.display()
-        );
     }
 }
 

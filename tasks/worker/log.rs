@@ -23,17 +23,6 @@ impl std::str::FromStr for LogLevel {
     }
 }
 
-impl LogLevel {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::Error => "error",
-            Self::Warn => "warn",
-            Self::Info => "info",
-            Self::Debug => "debug",
-        }
-    }
-}
-
 /// 简单日志函数。
 ///
 /// `configured` 是用户选择的日志级别，`level` 是当前消息的级别。

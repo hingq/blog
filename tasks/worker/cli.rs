@@ -1,49 +1,86 @@
 use crate::log::LogLevel;
-use clap::{Parser, Subcommand};
+use anyhow::{Context, Result};
+use std::env;
 use std::path::PathBuf;
+use std::str::FromStr;
 
-#[derive(Debug, Parser)]
-#[command(name = "worker")]
-#[command(version = "0.1.0")]
-#[command(about = "低开销 Rust 定时任务调度器")]
+const DEFAULT_CONFIG_PATH: &str = "worker/config.toml";
+const DEFAULT_LOG_LEVEL: &str = "info";
+const CONFIG_ENV: &str = "WORKER_CONFIG";
+const LOG_LEVEL_ENV: &str = "WORKER_LOG_LEVEL";
+
+#[derive(Debug)]
 pub struct Cli {
-    /// 配置文件路径
-    #[arg(short, long, default_value = "worker/config.toml")]
     pub config: PathBuf,
-
-    /// 日志级别: error, warn, info, debug
-    #[arg(short, long, default_value = "info")]
     pub log_level: LogLevel,
-
-    #[command(subcommand)]
     pub command: Commands,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug)]
 pub enum Commands {
-    /// 启动调度器
-    Start {
-        /// 前台运行调度器，用于调试或交给 systemd/supervisor 管理
-        #[arg(long)]
-        foreground: bool,
-    },
+    Start,
+    Run { name: String },
+    List,
+}
 
-    /// 执行一次任务
-    Run {
-        /// 允许手动执行已关闭任务
-        #[arg(long)]
-        include_disabled: bool,
+impl Cli {
+    pub fn parse() -> Result<Self> {
+        Self::parse_from(
+            env::args(),
+            env::var(CONFIG_ENV).ok(),
+            env::var(LOG_LEVEL_ENV).ok(),
+        )
+    }
 
-        /// 任务名称
-        name: String,
-    },
+    fn parse_from<I, S>(
+        args: I,
+        config_env: Option<String>,
+        log_level_env: Option<String>,
+    ) -> Result<Self>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        let mut args = args.into_iter().map(Into::into);
+        let _program = args.next();
 
-    /// 查看任务列表
-    List {
-        /// 显示已关闭任务
-        #[arg(long)]
-        all: bool,
-    },
+        let command = match args.next().as_deref() {
+            Some("start") => Commands::Start,
+            Some("list") => Commands::List,
+            Some("run") => {
+                let name = args.next().context("用法: worker run <name>")?;
+                Commands::Run { name }
+            }
+            Some(command) => {
+                anyhow::bail!("未知命令: {}\n{}", command, usage());
+            }
+            None => {
+                anyhow::bail!("{}", usage());
+            }
+        };
+
+        if let Some(extra) = args.next() {
+            anyhow::bail!("多余参数: {}\n{}", extra, usage());
+        }
+
+        let config = PathBuf::from(config_env.unwrap_or_else(|| DEFAULT_CONFIG_PATH.to_string()));
+        let log_level = LogLevel::from_str(
+            log_level_env
+                .unwrap_or_else(|| DEFAULT_LOG_LEVEL.to_string())
+                .as_str(),
+        )
+        .map_err(anyhow::Error::msg)?;
+
+        Ok(Self {
+            config,
+            log_level,
+            command,
+        })
+    }
+}
+
+fn usage() -> &'static str {
+    "用法:\n  worker start\n  worker list\n  worker run <name>\n\n环境变量:\n  WORKER_CONFIG=worker/config.toml\n  WORKER_LOG_LEVEL=info"
 }
 
 #[cfg(test)]
@@ -51,36 +88,57 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_list_all_flag() {
-        let cli = Cli::parse_from(["worker", "list", "--all"]);
+    fn parses_list_command() {
+        let cli = Cli::parse_from(["worker", "list"], None, None).unwrap();
 
-        assert!(matches!(cli.command, Commands::List { all: true }));
+        assert!(matches!(cli.command, Commands::List));
     }
 
     #[test]
-    fn parses_run_include_disabled_flag() {
-        let cli = Cli::parse_from(["worker", "run", "--include-disabled", "paused"]);
+    fn parses_run_command() {
+        let cli = Cli::parse_from(["worker", "run", "paused"], None, None).unwrap();
 
-        assert!(matches!(
-            cli.command,
-            Commands::Run {
-                include_disabled: true,
-                name
-            } if name == "paused"
-        ));
+        assert!(matches!(cli.command, Commands::Run { name } if name == "paused"));
     }
 
     #[test]
-    fn start_defaults_to_background_mode() {
-        let cli = Cli::parse_from(["worker", "start"]);
+    fn parses_start_command() {
+        let cli = Cli::parse_from(["worker", "start"], None, None).unwrap();
 
-        assert!(matches!(cli.command, Commands::Start { foreground: false }));
+        assert!(matches!(cli.command, Commands::Start));
     }
 
     #[test]
-    fn parses_start_foreground_flag() {
-        let cli = Cli::parse_from(["worker", "start", "--foreground"]);
+    fn rejects_missing_command() {
+        let err = Cli::parse_from(["worker"], None, None).unwrap_err();
 
-        assert!(matches!(cli.command, Commands::Start { foreground: true }));
+        assert!(err.to_string().contains("worker start"));
+    }
+
+    #[test]
+    fn rejects_unknown_command() {
+        let err = Cli::parse_from(["worker", "status"], None, None).unwrap_err();
+
+        assert!(err.to_string().contains("未知命令: status"));
+    }
+
+    #[test]
+    fn rejects_run_without_name() {
+        let err = Cli::parse_from(["worker", "run"], None, None).unwrap_err();
+
+        assert!(err.to_string().contains("worker run <name>"));
+    }
+
+    #[test]
+    fn reads_env_defaults() {
+        let cli = Cli::parse_from(
+            ["worker", "list"],
+            Some("custom/config.toml".to_string()),
+            Some("debug".to_string()),
+        )
+        .unwrap();
+
+        assert_eq!(cli.config, PathBuf::from("custom/config.toml"));
+        assert_eq!(cli.log_level, LogLevel::Debug);
     }
 }

@@ -65,8 +65,8 @@ mod tests {
     #[test]
     fn parses_env_line() {
         assert_eq!(
-            parse_env_line("GEMINI_API_KEY=abc123"),
-            Some(("GEMINI_API_KEY", "abc123"))
+            parse_env_line("API_KEY=abc123"),
+            Some(("API_KEY", "abc123"))
         );
         assert_eq!(
             parse_env_line(" EMAIL_USER = \"me@example.com\" "),

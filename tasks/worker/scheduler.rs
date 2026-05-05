@@ -100,7 +100,6 @@ mod tests {
         let jobs = vec![ResolvedJob {
             name: "test".to_string(),
             cron: "0 8 * * *".to_string(),
-            package: "test-package".to_string(),
             binary_path: PathBuf::from("/bin/test"),
             working_dir: PathBuf::from("/tmp"),
             args: Vec::new(),
