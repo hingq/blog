@@ -11,8 +11,6 @@ jobs:
   build-and-deploy:
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
-    environment: blog
-
     env:
       REGISTRY: crpi-gkcfsuhf4ajbzvh0.cn-beijing.personal.cr.aliyuncs.com
       IMAGE_REPO: ather/next_blog

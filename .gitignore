@@ -50,8 +50,9 @@ tsconfig.tsbuildinfo
 *.tar
 .env
 
-# Rust task build output
-/tasks/leetcode-daily/target/
+# Task build output
+/tasks/target/
+/tasks/*/dist/
 
 # LeetCode daily runtime cache
 /data/leetcode-daily/
