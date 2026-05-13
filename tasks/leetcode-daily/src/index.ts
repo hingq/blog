@@ -1,16 +1,9 @@
 import path from 'node:path'
 import { writeBlogPost } from './blog'
 import { questionCachePath, readJson, solutionCachePath, writeJson } from './cache'
-import {
-  cacheRoot,
-  loadDotenv,
-  projectRoot,
-  readGeminiModels,
-  readRequiredEnvTrimmed,
-} from './config'
+import { cacheRoot, loadDotenv, projectRoot } from './config'
 import { sendDailyEmail } from './email'
-import { generateSolution } from './gemini'
-import { fetchDailyQuestion } from './leetcode'
+import { fetchDailyQuestion, fetchQuestionSolution } from './leetcode'
 import type { DailyQuestion, SolutionCache } from './types'
 
 function todayBeijing(): string {
@@ -40,25 +33,23 @@ export async function runLeetcodeDaily() {
   }
   console.log(`   当前题目: ${daily.question.title}`)
 
-  console.log('2. 正在准备 Google Gemini 题解...')
-  const models = readGeminiModels()
-  console.log(`   候选模型: ${models.join(' -> ')}`)
+  console.log('2. 正在获取 LeetCode 中文站题解...')
   const solutionPath = solutionCachePath(rootCache, today)
   const cachedSolution = readJson<SolutionCache>(solutionPath)
   let solution = cachedSolution?.content
   if (solution) {
     console.log(`   命中题解缓存: ${solutionPath}`)
   } else {
-    const apiKey = readRequiredEnvTrimmed(['GEMINI_API_KEY', 'GOOGLE_API_KEY'])
-    const [content, model] = await generateSolution(daily, apiKey, models)
-    solution = content
+    const fetchedSolution = await fetchQuestionSolution(daily.question.titleSlug)
+    solution = fetchedSolution.content
     writeJson(solutionPath, {
       date: daily.date,
       titleSlug: daily.question.titleSlug,
-      model,
-      content,
+      solutionSlug: fetchedSolution.slug,
+      sourceUrl: fetchedSolution.sourceUrl,
+      content: fetchedSolution.content,
     })
-    console.log(`   题解生成成功并写入缓存: ${solutionPath}`)
+    console.log(`   题解请求成功并写入缓存: ${solutionPath}`)
   }
 
   console.log('3. 正在写入本地博客文件...')

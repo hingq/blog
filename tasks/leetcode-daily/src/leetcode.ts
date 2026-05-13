@@ -1,4 +1,11 @@
-import type { DailyQuestion, QuestionResponse, TodayRecordResponse } from './types'
+import type {
+  DailyQuestion,
+  LeetcodeSolution,
+  QuestionResponse,
+  SolutionArticleResponse,
+  SolutionArticlesResponse,
+  TodayRecordResponse,
+} from './types'
 
 const LEETCODE_GRAPHQL_URL = 'https://leetcode.cn/graphql'
 
@@ -51,6 +58,61 @@ export async function fetchDailyQuestion(): Promise<DailyQuestion> {
     variables: { titleSlug },
   })
   return mapDailyQuestion(todayResp, questionResp)
+}
+
+export function mapSolutionArticle(
+  questionSlug: string,
+  articlesResp: SolutionArticlesResponse,
+  articleResp: SolutionArticleResponse
+): LeetcodeSolution {
+  const solutionSlug = articlesResp.data.questionSolutionArticles.edges[0]?.node.slug
+  if (!solutionSlug) throw new Error(`LeetCode 中文站未返回 ${questionSlug} 的可见题解`)
+
+  const article = articleResp.data.solutionArticle
+  if (!article?.content?.trim()) throw new Error(`LeetCode 中文站题解内容为空: ${solutionSlug}`)
+
+  return {
+    title: article.title,
+    slug: article.slug || solutionSlug,
+    sourceUrl: `/problems/${questionSlug}/solutions/${article.slug || solutionSlug}/`,
+    content: article.content,
+  }
+}
+
+export async function fetchQuestionSolution(questionSlug: string): Promise<LeetcodeSolution> {
+  const articlesQuery = `
+    query solutionArticles($questionSlug: String!) {
+      questionSolutionArticles(questionSlug: $questionSlug, skip: 0, first: 1, orderBy: DEFAULT) {
+        edges {
+          node {
+            title
+            slug
+          }
+        }
+      }
+    }
+  `
+  const articlesResp = await postGraphql<SolutionArticlesResponse>({
+    query: articlesQuery,
+    variables: { questionSlug },
+  })
+  const solutionSlug = articlesResp.data.questionSolutionArticles.edges[0]?.node.slug
+  if (!solutionSlug) throw new Error(`LeetCode 中文站未返回 ${questionSlug} 的可见题解`)
+
+  const articleQuery = `
+    query solutionArticle($slug: String!) {
+      solutionArticle(slug: $slug) {
+        title
+        slug
+        content
+      }
+    }
+  `
+  const articleResp = await postGraphql<SolutionArticleResponse>({
+    query: articleQuery,
+    variables: { slug: solutionSlug },
+  })
+  return mapSolutionArticle(questionSlug, articlesResp, articleResp)
 }
 
 async function postGraphql<T>(body: unknown): Promise<T> {

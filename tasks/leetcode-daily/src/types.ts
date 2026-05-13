@@ -14,7 +14,8 @@ export type DailyQuestion = {
 export type SolutionCache = {
   date: string
   titleSlug: string
-  model: string
+  solutionSlug?: string
+  sourceUrl?: string
   content: string
 }
 
@@ -38,4 +39,34 @@ export type QuestionResponse = {
       difficulty: string
     }
   }
+}
+
+export type SolutionArticlesResponse = {
+  data: {
+    questionSolutionArticles: {
+      edges: Array<{
+        node: {
+          title: string
+          slug: string
+        }
+      }>
+    }
+  }
+}
+
+export type SolutionArticleResponse = {
+  data: {
+    solutionArticle: {
+      title: string
+      slug: string
+      content: string
+    } | null
+  }
+}
+
+export type LeetcodeSolution = {
+  title: string
+  slug: string
+  sourceUrl: string
+  content: string
 }

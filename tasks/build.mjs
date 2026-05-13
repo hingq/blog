@@ -33,7 +33,6 @@ await Promise.all([
       'tasks/leetcode-daily/src/cache.ts',
       'tasks/leetcode-daily/src/config.ts',
       'tasks/leetcode-daily/src/email.ts',
-      'tasks/leetcode-daily/src/gemini.ts',
       'tasks/leetcode-daily/src/leetcode.ts',
     ],
     outdir: 'tasks/leetcode-daily/dist',

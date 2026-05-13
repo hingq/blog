@@ -29,24 +29,3 @@ export function loadDotenv(filePath: string) {
     if (parsed && process.env[parsed[0]] == null) process.env[parsed[0]] = parsed[1]
   }
 }
-
-export function parseGeminiModels(value: string): string[] {
-  const models: string[] = []
-  for (const model of value.split(',')) {
-    const trimmed = model.trim()
-    if (trimmed && !models.includes(trimmed)) models.push(trimmed)
-  }
-  return models
-}
-
-export function readGeminiModels(env = process.env): string[] {
-  return parseGeminiModels(env.GEMINI_MODEL || 'gemini-3.1-pro-preview')
-}
-
-export function readRequiredEnvTrimmed(keys: string[], env = process.env): string {
-  for (const key of keys) {
-    const value = env[key]?.trim()
-    if (value) return value
-  }
-  throw new Error(`环境变量未设置或为空: ${keys.join(' / ')}`)
-}
