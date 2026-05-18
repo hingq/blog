@@ -9,7 +9,7 @@ const {
   readJson,
   solutionCachePath,
   writeJson,
-} = require('../tasks/leetcode-daily/dist/cache.js')
+} = require('../tasks/dist/tasks/leetcode-daily-cache.cjs')
 
 test('cache path helpers build separate question and solution paths', () => {
   const root = path.join('/repo', 'data', 'leetcode-daily')

@@ -5,7 +5,7 @@ const {
   formatLeetcodeContent,
   normalizeSolutionMarkdown,
   renderBlogPost,
-} = require('../tasks/leetcode-daily/dist/blog.js')
+} = require('../tasks/dist/tasks/leetcode-daily-blog.cjs')
 
 test('formatLeetcodeContent converts LeetCode HTML into MDX-friendly markdown', () => {
   const html = `<p>给你一个整数 <code>x</code>。</p>

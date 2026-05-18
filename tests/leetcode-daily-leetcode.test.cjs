@@ -1,7 +1,10 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 
-const { mapDailyQuestion, mapSolutionArticle } = require('../tasks/leetcode-daily/dist/leetcode.js')
+const {
+  mapDailyQuestion,
+  mapSolutionArticle,
+} = require('../tasks/dist/tasks/leetcode-daily-leetcode.cjs')
 
 test('mapDailyQuestion maps LeetCode GraphQL responses into internal shape', () => {
   const daily = mapDailyQuestion(

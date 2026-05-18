@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { parseCron } from './cron'
+import { packageRoot, repoRoot } from './paths'
 import type { JobConfig, WorkerConfig } from './types'
 
 function asObject(value: unknown): Record<string, unknown> {
@@ -30,14 +31,39 @@ function normalizeJob(raw: unknown): JobConfig {
   return { name, enabled, cron, command, args, cwd, env, timeoutMs }
 }
 
-export function validateConfig(input: unknown): WorkerConfig {
+function normalizePath(value: string | undefined, base: string): string | undefined {
+  if (!value || path.isAbsolute(value)) return value
+  return path.join(base, value)
+}
+
+function normalizeExecutable(value: string | undefined, base: string): string | undefined {
+  if (!value || path.isAbsolute(value)) return value
+  return value.includes('/') || value.startsWith('.') ? path.join(base, value) : value
+}
+
+function runtimeBaseForConfig(configPath?: string): string {
+  if (configPath) return path.dirname(path.resolve(configPath))
+  return packageRoot()
+}
+
+export function validateConfig(input: unknown, configPath?: string): WorkerConfig {
   const raw = asObject(input)
   if (!Array.isArray(raw.jobs) || raw.jobs.length === 0) {
     throw new Error('至少配置一个任务')
   }
 
   const names = new Set<string>()
-  const jobs = raw.jobs.map(normalizeJob)
+  const packageBase = runtimeBaseForConfig(configPath)
+  const projectBase = repoRoot()
+  const jobs = raw.jobs.map((rawJob) => {
+    const job = normalizeJob(rawJob)
+    return {
+      ...job,
+      command: normalizeExecutable(job.command, packageBase),
+      args: job.args.map((arg) => normalizePath(arg, packageBase) ?? arg),
+      cwd: normalizePath(job.cwd, projectBase),
+    }
+  })
   for (const job of jobs) {
     if (names.has(job.name)) throw new Error(`重复任务名: ${job.name}`)
     names.add(job.name)
@@ -56,5 +82,5 @@ export function validateConfig(input: unknown): WorkerConfig {
 export function loadConfig(configPath: string): WorkerConfig {
   const fullPath = path.resolve(configPath)
   const text = fs.readFileSync(fullPath, 'utf8')
-  return validateConfig(JSON.parse(text))
+  return validateConfig(JSON.parse(text), fullPath)
 }

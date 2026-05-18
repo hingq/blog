@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 
-const { createRuntimeState, triggerDueJobs } = require('../tasks/worker/dist/scheduler.js')
+const { createRuntimeState, triggerDueJobs } = require('../tasks/dist/worker-scheduler.cjs')
 
 test('triggerDueJobs skips a task that is already running', async () => {
   const job = { name: 'daily', enabled: true, cron: '* * * * *', command: 'echo' }

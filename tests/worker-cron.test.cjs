@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 
-const { nextCronDate } = require('../tasks/worker/dist/cron.js')
+const { nextCronDate } = require('../tasks/dist/worker-cron.cjs')
 
 test('nextCronDate computes the next matching Beijing minute', () => {
   const next = nextCronDate('30 8 * * *', new Date('2026-05-07T00:00:00.000Z'))

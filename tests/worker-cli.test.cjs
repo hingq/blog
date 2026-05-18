@@ -1,13 +1,20 @@
 const assert = require('node:assert/strict')
+const path = require('node:path')
 const test = require('node:test')
 
-const { parseCli } = require('../tasks/worker/dist/cli.js')
+const { parseCli } = require('../tasks/dist/worker-cli.cjs')
 
 test('parseCli parses list all', () => {
   const cli = parseCli(['node', 'worker', 'list', '--all'])
 
   assert.equal(cli.command, 'list')
   assert.equal(cli.all, true)
+})
+
+test('parseCli uses the packaged worker config by default', () => {
+  const cli = parseCli(['node', 'worker', 'list'])
+
+  assert.equal(cli.config, path.join(__dirname, '..', 'tasks', 'dist', 'config.json'))
 })
 
 test('parseCli parses list alias', () => {

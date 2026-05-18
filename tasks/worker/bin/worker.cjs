@@ -1,18 +1,16 @@
 #!/usr/bin/env node
-const { spawnSync } = require('node:child_process')
 const path = require('node:path')
+const fs = require('node:fs')
 
 const root = path.resolve(__dirname, '../../..')
-const build = spawnSync(process.execPath, [path.join(root, 'tasks/build.mjs')], {
-  cwd: root,
-  stdio: 'inherit',
-})
+const workerBundle = path.join(root, 'tasks/dist/worker.cjs')
 
-if (build.status !== 0) {
-  process.exit(build.status ?? 1)
+if (!fs.existsSync(workerBundle)) {
+  console.error('Worker bundle not found. Run `yarn tasks:build` first.')
+  process.exit(1)
 }
 
-require(path.join(root, 'tasks/worker/dist/cli.js'))
+require(workerBundle)
   .createProgram()
   .parseAsync(process.argv)
   .catch((error) => {

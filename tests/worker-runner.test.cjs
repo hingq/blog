@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 
-const { runTask } = require('../tasks/worker/dist/runner.js')
+const { runTask } = require('../tasks/dist/worker-runner.cjs')
 
 test('runTask returns failure for non-zero exit without throwing', async () => {
   const result = await runTask({

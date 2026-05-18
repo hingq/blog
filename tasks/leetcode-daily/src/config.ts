@@ -2,6 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 export function projectRoot(): string {
+  if (process.env.TASKS_PROJECT_ROOT) return path.resolve(process.env.TASKS_PROJECT_ROOT)
+  if (path.basename(__dirname) === 'jobs') return path.resolve(__dirname, '../../../..')
   return path.resolve(__dirname, '../../..')
 }
 

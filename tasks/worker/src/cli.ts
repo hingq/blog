@@ -3,7 +3,7 @@ import { Command } from 'commander'
 import { loadConfig } from './config'
 import { acquireLock } from './lock'
 import { createLogger, normalizeLogLevel } from './log'
-import { lockPathForConfig, statePathForConfig } from './paths'
+import { defaultConfigPath, lockPathForConfig, statePathForConfig } from './paths'
 import { runTask } from './runner'
 import { startScheduler } from './scheduler'
 import { readState } from './state'
@@ -49,7 +49,7 @@ export function createProgram(onCommand: (cli: ParsedCli) => void | Promise<void
     .name('worker')
     .description('Language-agnostic task scheduler')
     .version('0.1.0')
-    .option('-c, --config <path>', '配置文件路径', 'tasks/worker/config.json')
+    .option('-c, --config <path>', '配置文件路径', defaultConfigPath())
     .option('-l, --log-level <level>', '日志级别: error, warn, info, debug', 'info')
 
   const startCommand = program
