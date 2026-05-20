@@ -83,6 +83,26 @@ cp tasks/worker/config.example.json tasks/worker/config.json
 }
 ```
 
+Worker 发送任务失败通知时也会使用同一套环境变量解析规则。生产环境如果博客项目位于 `/blog`，设置 `TASKS_PROJECT_ROOT=/blog` 后，默认会读取 `/blog/.env`；也可以继续通过 `leetcode_daily` job 的 `LEETCODE_DAILY_ENV_PATH` 指向其他 env 文件。
+
+邮件发送默认使用 Gmail 465 端口的隐式 TLS：
+
+```dotenv
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_STARTTLS=false
+```
+
+如果邮件服务商使用 587 端口，使用 STARTTLS：
+
+```dotenv
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_STARTTLS=true
+```
+
 ## 常用命令
 
 命令默认在仓库根目录执行：
