@@ -1,10 +1,11 @@
-import path from 'node:path'
 import { writeBlogPost } from './blog'
 import { questionCachePath, readJson, solutionCachePath, writeJson } from './cache'
-import { cacheRoot, loadDotenv, projectRoot } from './config'
+import { cacheRoot, loadConfiguredDotenv, projectRoot } from './config'
 import { sendDailyEmail } from './email'
 import { fetchDailyQuestion, fetchQuestionSolution } from './leetcode'
+import { publishContent } from './publish'
 import type { DailyQuestion, SolutionCache } from './types'
+import { pathToFileURL } from 'node:url'
 
 function todayBeijing(): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -17,7 +18,7 @@ function todayBeijing(): string {
 
 export async function runLeetcodeDaily() {
   const root = projectRoot()
-  loadDotenv(path.join(root, '.env'))
+  loadConfiguredDotenv(root)
   const today = todayBeijing()
   const rootCache = cacheRoot(root)
 
@@ -56,11 +57,13 @@ export async function runLeetcodeDaily() {
   const outputPath = writeBlogPost(root, daily, solution)
   console.log(`   文件已保存至: ${outputPath}`)
 
+  await publishContent(root)
+
   const shouldSendEmail =
     process.env.SEND_EMAIL == null ||
     (process.env.SEND_EMAIL !== 'false' && process.env.SEND_EMAIL !== '0')
   if (shouldSendEmail) {
-    console.log('4. 正在发送邮件通知...')
+    console.log('5. 正在发送邮件通知...')
     try {
       await sendDailyEmail(daily)
       console.log('   邮件已成功发送至收件箱。')
@@ -68,13 +71,13 @@ export async function runLeetcodeDaily() {
       console.error(`   邮件发送失败: ${error instanceof Error ? error.message : String(error)}`)
     }
   } else {
-    console.log('4. 跳过邮件发送。')
+    console.log('5. 跳过邮件发送。')
   }
 
   console.log('任务全部完成。')
 }
 
-if (require.main === module) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   runLeetcodeDaily().catch((error) => {
     console.error(error instanceof Error ? error.stack || error.message : error)
     process.exit(1)

@@ -1,9 +1,10 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 
-const { createRuntimeState, triggerDueJobs } = require('../tasks/dist/worker-scheduler.cjs')
+const schedulerModule = import('../tasks/dist/worker-scheduler.mjs')
 
 test('triggerDueJobs skips a task that is already running', async () => {
+  const { createRuntimeState, triggerDueJobs } = await schedulerModule
   const job = { name: 'daily', enabled: true, cron: '* * * * *', command: 'echo' }
   const state = createRuntimeState([job], new Date('2026-05-07T08:00:00.000Z'))
   state.jobs.daily.running = true
@@ -25,6 +26,7 @@ test('triggerDueJobs skips a task that is already running', async () => {
 })
 
 test('triggerDueJobs records a failed task and continues with later jobs', async () => {
+  const { createRuntimeState, triggerDueJobs } = await schedulerModule
   const jobs = [
     { name: 'first', enabled: true, cron: '* * * * *', command: 'first' },
     { name: 'second', enabled: true, cron: '* * * * *', command: 'second' },

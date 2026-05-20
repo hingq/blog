@@ -1,9 +1,10 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 
-const { runTask } = require('../tasks/dist/worker-runner.cjs')
+const runnerModule = import('../tasks/dist/worker-runner.mjs')
 
 test('runTask returns failure for non-zero exit without throwing', async () => {
+  const { runTask } = await runnerModule
   const result = await runTask({
     name: 'fail',
     command: process.execPath,
@@ -15,6 +16,7 @@ test('runTask returns failure for non-zero exit without throwing', async () => {
 })
 
 test('runTask times out and marks only that run as failed', async () => {
+  const { runTask } = await runnerModule
   const result = await runTask({
     name: 'timeout',
     command: process.execPath,
@@ -27,6 +29,7 @@ test('runTask times out and marks only that run as failed', async () => {
 })
 
 test('runTask passes args and env to the child process', async () => {
+  const { runTask } = await runnerModule
   const result = await runTask({
     name: 'env',
     command: 'node',
@@ -39,6 +42,7 @@ test('runTask passes args and env to the child process', async () => {
 })
 
 test('runTask returns failure when the command is missing', async () => {
+  const { runTask } = await runnerModule
   const result = await runTask({
     name: 'missing',
     command: 'definitely-not-a-worker-command',

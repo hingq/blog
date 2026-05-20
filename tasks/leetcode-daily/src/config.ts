@@ -1,10 +1,31 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
+export const LEETCODE_DAILY_ENV_PATH = 'LEETCODE_DAILY_ENV_PATH'
+
+export function inferProjectRoot(
+  startDir = __dirname,
+  existsSync: (filePath: string) => boolean = fs.existsSync
+): string {
+  let current = path.resolve(startDir)
+  for (let depth = 0; depth < 8; depth++) {
+    if (
+      existsSync(path.join(current, 'data', 'blog')) ||
+      existsSync(path.join(current, 'data', 'siteMetadata.js'))
+    ) {
+      return current
+    }
+    const parent = path.dirname(current)
+    if (parent === current) break
+    current = parent
+  }
+  if (path.basename(startDir) === 'jobs') return path.resolve(startDir, '../../../..')
+  return path.resolve(startDir, '../../..')
+}
+
 export function projectRoot(): string {
   if (process.env.TASKS_PROJECT_ROOT) return path.resolve(process.env.TASKS_PROJECT_ROOT)
-  if (path.basename(__dirname) === 'jobs') return path.resolve(__dirname, '../../../..')
-  return path.resolve(__dirname, '../../..')
+  return inferProjectRoot()
 }
 
 export function cacheRoot(root = projectRoot()): string {
@@ -30,4 +51,16 @@ export function loadDotenv(filePath: string) {
     const parsed = parseEnvLine(line)
     if (parsed && process.env[parsed[0]] == null) process.env[parsed[0]] = parsed[1]
   }
+}
+
+export function resolveDotenvPath(root = projectRoot()): string {
+  const configuredPath = process.env[LEETCODE_DAILY_ENV_PATH]?.trim()
+  if (!configuredPath) return path.join(root, '.env')
+  return path.isAbsolute(configuredPath) ? configuredPath : path.join(root, configuredPath)
+}
+
+export function loadConfiguredDotenv(root = projectRoot()): string {
+  const dotenvPath = resolveDotenvPath(root)
+  loadDotenv(dotenvPath)
+  return dotenvPath
 }

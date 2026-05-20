@@ -3,17 +3,16 @@
   "version": "2.4.0",
   "private": true,
   "bin": {
-    "worker": "./tasks/worker/bin/worker.cjs"
+    "worker": "./tasks/worker/bin/worker.mjs"
   },
   "scripts": {
     "start": "next dev",
     "dev": "cross-env INIT_CWD=$PWD next dev",
     "build": "cross-env INIT_CWD=$PWD next build",
     "publish:content": "node ./scripts/publish-content.mjs",
-    "worker": "node ./tasks/worker/bin/worker.cjs",
+    "worker": "node ./tasks/worker/bin/worker.mjs",
     "worker:build": "node ./tasks/build.mjs",
     "tasks:build": "node ./tasks/build.mjs",
-    "tasks:check": "yarn tsc --noEmit --pretty false",
     "tasks:lint": "eslint tasks/**/*.ts",
     "test:worker": "yarn tasks:build && node --test tests/worker-*.test.cjs",
     "test:tasks": "yarn tasks:build && node --test tests/worker-*.test.cjs tests/leetcode-daily-*.test.cjs",

@@ -4,7 +4,7 @@ import { fromHtmlIsomorphic } from 'hast-util-from-html-isomorphic'
 import matter from 'gray-matter'
 import path from 'node:path'
 import { readFile, readdir } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import readingTime from 'reading-time'
 import { slug as githubSlug } from 'github-slugger'
 import remarkGfm from 'remark-gfm'
@@ -20,12 +20,14 @@ import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeCitation from 'rehype-citation'
 import rehypeKatex from 'rehype-katex'
 import rehypeKatexNoTranslate from 'rehype-katex-notranslate'
-import rehypePresetMinify from 'rehype-preset-minify'
 import rehypePrismPlus from 'rehype-prism-plus'
 import rehypeSlug from 'rehype-slug'
-import siteMetadata from '../data/siteMetadata.js'
 
-const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+export const projectRoot = process.env.CONTENT_PROJECT_ROOT
+  ? path.resolve(process.env.CONTENT_PROJECT_ROOT)
+  : process.env.TASKS_PROJECT_ROOT
+    ? path.resolve(process.env.TASKS_PROJECT_ROOT)
+    : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const blogDir = path.join(projectRoot, 'data', 'blog')
 const blogIndexUrl = process.env.BLOG_INDEX_URL
 const minioEndpoint = process.env.MINIO_ENDPOINT
@@ -151,13 +153,36 @@ async function compileMdx(source) {
         rehypeKatexNoTranslate,
         [rehypeCitation, { path: path.join(projectRoot, 'data') }],
         [rehypePrismPlus, { defaultLanguage: 'js', ignoreMissing: true }],
-        rehypePresetMinify,
       ],
     })
   )
 }
 
-function getPrimaryImage(images) {
+let siteMetadataPromise
+
+function fallbackSiteMetadata() {
+  const siteUrl =
+    process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || process.env.MINIO_PUBLIC_BASE_URL || ''
+  return {
+    siteUrl: siteUrl.replace(/\/$/, ''),
+    socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,
+  }
+}
+
+async function loadSiteMetadata() {
+  const metadataPath = path.join(projectRoot, 'data', 'siteMetadata.js')
+  try {
+    await readFile(metadataPath, 'utf8')
+  } catch {
+    return fallbackSiteMetadata()
+  }
+
+  siteMetadataPromise ??= import(pathToFileURL(metadataPath).href)
+  const mod = await siteMetadataPromise
+  return mod.default ?? mod
+}
+
+function getPrimaryImage(images, siteMetadata) {
   if (Array.isArray(images)) {
     return images[0]
   }
@@ -168,6 +193,7 @@ function getPrimaryImage(images) {
 export async function compileLocalBlogPosts() {
   const files = await getMdxFiles(blogDir)
   const seenPaths = new Map()
+  const siteMetadata = await loadSiteMetadata()
 
   return Promise.all(
     files.map(async (file) => {
@@ -211,8 +237,8 @@ export async function compileLocalBlogPosts() {
             ? new Date(data.lastmod).toISOString()
             : new Date(data.date).toISOString(),
           description: data.summary,
-          image: getPrimaryImage(data.images),
-          url: `${siteMetadata.siteUrl}/${flattenedPath}`,
+          image: getPrimaryImage(data.images, siteMetadata),
+          url: siteMetadata.siteUrl ? `${siteMetadata.siteUrl}/${flattenedPath}` : flattenedPath,
         },
         body: {
           raw: content,

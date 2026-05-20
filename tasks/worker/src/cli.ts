@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
+import { pathToFileURL } from 'node:url'
 import { loadConfig } from './config'
 import { acquireLock } from './lock'
 import { createLogger, normalizeLogLevel } from './log'
@@ -163,7 +164,7 @@ export async function runCli(cli: ParsedCli) {
   await startScheduler(jobs, statePathForConfig(cli.config), log)
 }
 
-if (require.main === module) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   createProgram()
     .parseAsync(process.argv)
     .catch((error) => {

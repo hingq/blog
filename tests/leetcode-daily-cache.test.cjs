@@ -4,14 +4,10 @@ const os = require('node:os')
 const path = require('node:path')
 const test = require('node:test')
 
-const {
-  questionCachePath,
-  readJson,
-  solutionCachePath,
-  writeJson,
-} = require('../tasks/dist/tasks/leetcode-daily-cache.cjs')
+const cacheModule = import('../tasks/dist/tasks/leetcode-daily-cache.mjs')
 
-test('cache path helpers build separate question and solution paths', () => {
+test('cache path helpers build separate question and solution paths', async () => {
+  const { questionCachePath, solutionCachePath } = await cacheModule
   const root = path.join('/repo', 'data', 'leetcode-daily')
 
   assert.equal(
@@ -24,7 +20,8 @@ test('cache path helpers build separate question and solution paths', () => {
   )
 })
 
-test('readJson and writeJson round trip cache files', () => {
+test('readJson and writeJson round trip cache files', async () => {
+  const { readJson, writeJson } = await cacheModule
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'leetcode-daily-cache-'))
   const file = path.join(dir, 'nested', 'cache.json')
 

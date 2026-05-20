@@ -1,12 +1,10 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 
-const {
-  mapDailyQuestion,
-  mapSolutionArticle,
-} = require('../tasks/dist/tasks/leetcode-daily-leetcode.cjs')
+const leetcodeModule = import('../tasks/dist/tasks/leetcode-daily-leetcode.mjs')
 
-test('mapDailyQuestion maps LeetCode GraphQL responses into internal shape', () => {
+test('mapDailyQuestion maps LeetCode GraphQL responses into internal shape', async () => {
+  const { mapDailyQuestion } = await leetcodeModule
   const daily = mapDailyQuestion(
     { data: { todayRecord: [{ date: '2026-04-28', question: { titleSlug: 'two-sum' } }] } },
     {
@@ -33,7 +31,8 @@ test('mapDailyQuestion maps LeetCode GraphQL responses into internal shape', () 
   })
 })
 
-test('mapSolutionArticle maps LeetCode solution responses into internal shape', () => {
+test('mapSolutionArticle maps LeetCode solution responses into internal shape', async () => {
+  const { mapSolutionArticle } = await leetcodeModule
   const solution = mapSolutionArticle(
     'two-sum',
     {
@@ -62,7 +61,8 @@ test('mapSolutionArticle maps LeetCode solution responses into internal shape', 
   })
 })
 
-test('mapSolutionArticle fails when no visible solution is returned', () => {
+test('mapSolutionArticle fails when no visible solution is returned', async () => {
+  const { mapSolutionArticle } = await leetcodeModule
   assert.throws(
     () =>
       mapSolutionArticle(
@@ -74,7 +74,8 @@ test('mapSolutionArticle fails when no visible solution is returned', () => {
   )
 })
 
-test('mapSolutionArticle fails when solution content is empty', () => {
+test('mapSolutionArticle fails when solution content is empty', async () => {
+  const { mapSolutionArticle } = await leetcodeModule
   assert.throws(
     () =>
       mapSolutionArticle(

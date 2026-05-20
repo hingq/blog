@@ -3,13 +3,15 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 const test = require('node:test')
+const { pathToFileURL } = require('node:url')
 
-const { loadConfig, validateConfig } = require('../tasks/dist/worker-config.cjs')
+const configModule = import('../tasks/dist/worker-config.mjs')
 
 const repoRoot = path.join(__dirname, '..')
 const distRoot = path.join(repoRoot, 'tasks', 'dist')
 
-test('validateConfig rejects duplicate job names', () => {
+test('validateConfig rejects duplicate job names', async () => {
+  const { validateConfig } = await configModule
   assert.throws(
     () =>
       validateConfig({
@@ -22,7 +24,8 @@ test('validateConfig rejects duplicate job names', () => {
   )
 })
 
-test('validateConfig allows disabled jobs without runtime fields', () => {
+test('validateConfig allows disabled jobs without runtime fields', async () => {
+  const { validateConfig } = await configModule
   const config = validateConfig({
     jobs: [{ name: 'paused', enabled: false }],
   })
@@ -30,7 +33,8 @@ test('validateConfig allows disabled jobs without runtime fields', () => {
   assert.equal(config.jobs[0].enabled, false)
 })
 
-test('validateConfig rejects enabled jobs without a command', () => {
+test('validateConfig rejects enabled jobs without a command', async () => {
+  const { validateConfig } = await configModule
   assert.throws(
     () =>
       validateConfig({
@@ -40,7 +44,8 @@ test('validateConfig rejects enabled jobs without a command', () => {
   )
 })
 
-test('loadConfig resolves packaged task paths from the config directory', () => {
+test('loadConfig resolves packaged task paths from the config directory', async () => {
+  const { loadConfig } = await configModule
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'worker-config-'))
   const configPath = path.join(dir, 'config.json')
   fs.mkdirSync(path.join(dir, 'jobs'))
@@ -68,15 +73,50 @@ test('loadConfig resolves packaged task paths from the config directory', () => 
   fs.rmSync(dir, { recursive: true, force: true })
 })
 
-test('packaged config points task args at dist tasks directory', () => {
+test('packaged config points task args at dist tasks directory', async () => {
+  const { loadConfig } = await configModule
   const config = loadConfig(path.join(distRoot, 'config.json'))
+  const scriptsRoot = path.join(distRoot, 'scripts')
+  const chunksRoot = path.join(scriptsRoot, 'chunks')
+  const publishScript = fs.readFileSync(path.join(scriptsRoot, 'publish-content.mjs'), 'utf8')
+  const scriptsPackage = JSON.parse(fs.readFileSync(path.join(scriptsRoot, 'package.json'), 'utf8'))
+  const chunkFiles = fs.readdirSync(chunksRoot).filter((file) => file.endsWith('.mjs'))
+  const scriptBundleText = [
+    publishScript,
+    fs.readFileSync(path.join(scriptsRoot, 'blog-utils.mjs'), 'utf8'),
+    ...chunkFiles.map((file) => fs.readFileSync(path.join(chunksRoot, file), 'utf8')),
+  ].join('\n')
 
-  assert.equal(fs.existsSync(path.join(distRoot, 'worker.cjs')), true)
-  assert.equal(fs.existsSync(path.join(distRoot, 'leetcode-daily.cjs')), false)
-  assert.equal(fs.existsSync(path.join(distRoot, 'fetch-daily-info.cjs')), false)
+  assert.equal(fs.existsSync(path.join(distRoot, 'package.json')), true)
+  assert.equal(fs.existsSync(path.join(distRoot, 'worker.mjs')), true)
+  assert.equal(fs.existsSync(path.join(scriptsRoot, 'publish-content.mjs')), true)
+  assert.equal(fs.existsSync(path.join(scriptsRoot, 'blog-utils.mjs')), true)
+  assert.equal(scriptsPackage.type, 'module')
+  assert.ok(chunkFiles.length > 0)
+  assert.match(publishScript, /__taskCreateRequire\(import\.meta\.url\)/)
+  assert.match(publishScript, /const __dirname = __taskDirname\(__filename\)/)
+  assert.doesNotMatch(publishScript, /from ['"]@aws-sdk\/client-s3['"]/)
+  assert.match(publishScript, /from "\.\/chunks\/[^"]+\.mjs"/)
+  assert.doesNotMatch(scriptBundleText, /uglify-js\/tools\/node\.js/)
+  assert.doesNotMatch(scriptBundleText, /require\.resolve\(["']\.\.\/lib\/utils\.js["']\)/)
+
+  const requireChunk = chunkFiles.find((file) => {
+    const text = fs.readFileSync(path.join(chunksRoot, file), 'utf8')
+    return (
+      text.includes('__taskCreateRequire(import.meta.url)') &&
+      /export\s*\{[\s\S]*__require[\s\S]*\}/.test(text)
+    )
+  })
+  assert.ok(requireChunk)
+  const { __require } = await import(pathToFileURL(path.join(chunksRoot, requireChunk)).href)
+  assert.equal(__require('buffer').Buffer, Buffer)
+
+  assert.equal(fs.existsSync(path.join(distRoot, 'worker.cjs')), false)
+  assert.equal(fs.existsSync(path.join(distRoot, 'leetcode-daily.mjs')), false)
+  assert.equal(fs.existsSync(path.join(distRoot, 'fetch-daily-info.mjs')), false)
 
   for (const job of config.jobs) {
-    const taskArg = job.args.find((arg) => arg.endsWith('.cjs'))
+    const taskArg = job.args.find((arg) => arg.endsWith('.mjs'))
     assert.ok(taskArg)
     assert.equal(path.dirname(taskArg), path.join(distRoot, 'tasks'))
     assert.equal(fs.existsSync(taskArg), true)
@@ -84,11 +124,12 @@ test('packaged config points task args at dist tasks directory', () => {
   }
 })
 
-test('packaged example config points task args at dist tasks directory', () => {
+test('packaged example config points task args at dist tasks directory', async () => {
+  const { loadConfig } = await configModule
   const config = loadConfig(path.join(distRoot, 'config.example.json'))
 
   for (const job of config.jobs) {
-    const taskArg = job.args.find((arg) => arg.endsWith('.cjs'))
+    const taskArg = job.args.find((arg) => arg.endsWith('.mjs'))
     assert.ok(taskArg)
     assert.equal(path.dirname(taskArg), path.join(distRoot, 'tasks'))
   }

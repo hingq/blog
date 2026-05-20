@@ -1,13 +1,10 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 
-const {
-  formatLeetcodeContent,
-  normalizeSolutionMarkdown,
-  renderBlogPost,
-} = require('../tasks/dist/tasks/leetcode-daily-blog.cjs')
+const blogModule = import('../tasks/dist/tasks/leetcode-daily-blog.mjs')
 
-test('formatLeetcodeContent converts LeetCode HTML into MDX-friendly markdown', () => {
+test('formatLeetcodeContent converts LeetCode HTML into MDX-friendly markdown', async () => {
+  const { formatLeetcodeContent } = await blogModule
   const html = `<p>给你一个整数 <code>x</code>。</p>
 
 <p><img alt="" src="https://example.com/grid.png" style="width: 164px;" /></p>
@@ -29,7 +26,8 @@ test('formatLeetcodeContent converts LeetCode HTML into MDX-friendly markdown', 
   assert.match(formatted, /- `1 <= x <= 10\^4`/)
 })
 
-test('normalizeSolutionMarkdown removes top-level heading and horizontal rules', () => {
+test('normalizeSolutionMarkdown removes top-level heading and horizontal rules', async () => {
+  const { normalizeSolutionMarkdown } = await blogModule
   const normalized = normalizeSolutionMarkdown(
     '# 题目标题\n\n### 解题思路\n\n内容\n\n---\n\n### 总结'
   )
@@ -39,7 +37,8 @@ test('normalizeSolutionMarkdown removes top-level heading and horizontal rules',
   assert.doesNotMatch(normalized, /\n---\n/)
 })
 
-test('renderBlogPost includes original link before problem content', () => {
+test('renderBlogPost includes original link before problem content', async () => {
+  const { renderBlogPost } = await blogModule
   const daily = {
     date: '2026-04-28',
     link: '/problems/two-sum/',

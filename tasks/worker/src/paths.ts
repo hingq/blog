@@ -5,7 +5,7 @@ import path from 'node:path'
 
 export function packageRoot(): string {
   const bundledRoot = path.resolve(__dirname)
-  if (fs.existsSync(path.join(bundledRoot, 'worker.cjs'))) return bundledRoot
+  if (fs.existsSync(path.join(bundledRoot, 'worker.mjs'))) return bundledRoot
   if (
     (path.basename(bundledRoot) === 'dist' || path.basename(bundledRoot) === 'src') &&
     path.basename(path.dirname(bundledRoot)) === 'worker'

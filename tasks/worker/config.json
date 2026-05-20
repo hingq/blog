@@ -5,9 +5,25 @@
       "enabled": true,
       "cron": "0 8 * * *",
       "command": "node",
-      "args": ["leetcode-daily.cjs"],
+      "args": ["leetcode-daily.mjs"],
       "cwd": ".",
-      "env": {},
+      "env": {
+        "BLOG_INDEX_URL": "http://47.108.133.169:9000/blog/blog-index.json",
+        "SEARCH_INDEX_URL": "http://47.108.133.169:9000/blog/search.json",
+
+        "MINIO_ENDPOINT": "http://47.108.133.169:9000",
+        "MINIO_REGION": "us-east-1",
+        "MINIO_BUCKET": "blog",
+        "MINIO_ACCESS_KEY_ID": "minioadmin",
+        "MINIO_SECRET_ACCESS_KEY": "minioadmin123",
+        "MINIO_BLOG_INDEX_KEY": "blog-index.json",
+        "MINIO_SEARCH_INDEX_KEY": "search.json",
+        "MINIO_PUBLIC_BASE_URL": "",
+        "MINIO_FORCE_PATH_STYLE": "true",
+        "EMAIL_PASS": "ymlgifjryojcrzjp",
+        "EMAIL_USER": "try.ashore@gmail.com",
+        "EMAIL_RECEIVER": "amazyko@foxmail.com"
+      },
       "timeoutMs": 300000
     },
     {
@@ -15,7 +31,7 @@
       "enabled": true,
       "cron": "30 8 * * *",
       "command": "node",
-      "args": ["fetch-daily-info.cjs"],
+      "args": ["fetch-daily-info.mjs"],
       "cwd": ".",
       "env": {},
       "timeoutMs": 300000

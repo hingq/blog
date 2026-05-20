@@ -58,5 +58,3 @@ tsconfig.tsbuildinfo
 /data/leetcode-daily/
 **/target/*
 **/dist
-.gemini 
-.claude

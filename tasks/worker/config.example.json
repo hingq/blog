@@ -5,7 +5,7 @@
       "enabled": true,
       "cron": "0 8 * * *",
       "command": "node",
-      "args": ["leetcode-daily.cjs"],
+      "args": ["leetcode-daily.mjs"],
       "cwd": ".",
       "env": {},
       "timeoutMs": 300000
@@ -15,7 +15,7 @@
       "enabled": false,
       "cron": "30 8 * * *",
       "command": "node",
-      "args": ["fetch-daily-info.cjs"],
+      "args": ["fetch-daily-info.mjs"],
       "cwd": ".",
       "env": {},
       "timeoutMs": 300000
