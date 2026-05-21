@@ -131,7 +131,15 @@ async function main() {
   }
 
   const oldPostHashes = manifest?.posts ?? {}
-  const newPostHashes = {}
+  const newPostHashes = { ...oldPostHashes }
+
+  const isLeetcodeDailyOnly = process.env.LEETCODE_DAILY_ONLY === 'true'
+  const todayStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
 
   // Upload individual post files (incremental)
   logStep('Checking individual posts')
@@ -145,10 +153,25 @@ async function main() {
 
     const postKey = `${postsPrefix}${post.slug}.json`
 
-    if (oldPostHashes[post.slug] === hash) {
-      console.log(`[content-publish]   skip  ${post.slug}`)
-      skippedCount++
-      continue
+    const postDateStr = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date(post.date))
+
+    const isTodayPost = postDateStr === todayStr
+
+    if (isLeetcodeDailyOnly) {
+      if (!isTodayPost) {
+        continue
+      }
+    } else {
+      if (oldPostHashes[post.slug] === hash) {
+        console.log(`[content-publish]   skip  ${post.slug}`)
+        skippedCount++
+        continue
+      }
     }
 
     const label = oldPostHashes[post.slug] ? 'update' : 'new  '

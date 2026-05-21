@@ -73,6 +73,7 @@ test('publishContent runs publish script from project root with content root env
   assert.equal(calls[0].options.env.TASKS_PROJECT_ROOT, '/repo')
   assert.equal(calls[0].options.env.CONTENT_PROJECT_ROOT, '/repo')
   assert.equal(calls[0].options.env.MINIO_BUCKET, 'bucket')
+  assert.equal(calls[0].options.env.LEETCODE_DAILY_ONLY, 'true')
 })
 
 test('publishContent rejects when publish script exits unsuccessfully', async () => {

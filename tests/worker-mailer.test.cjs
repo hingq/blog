@@ -39,12 +39,12 @@ test('loadMailEnv reads configured dotenv path and preserves existing env', asyn
   const env = {
     EMAIL_USER: 'existing@example.com',
   }
-  loadMailEnv({ LEETCODE_DAILY_ENV_PATH: 'config/prod.env', SMTP_HOST: 'smtp.example.com' }, env)
+  loadMailEnv({ LEETCODE_DAILY_ENV_PATH: 'config/prod.env', PUBLISH_CONTENT: 'false' }, env)
 
   assert.equal(env.EMAIL_USER, 'existing@example.com')
   assert.equal(env.EMAIL_PASS, 'dotenv-pass')
   assert.equal(env.EMAIL_RECEIVER, 'dotenv-to')
-  assert.equal(env.SMTP_HOST, 'smtp.example.com')
+  assert.equal(env.PUBLISH_CONTENT, 'false')
 
   if (previousRoot == null) {
     delete process.env.TASKS_PROJECT_ROOT
@@ -143,11 +143,11 @@ test('readResponse includes connection context for socket errors', async () => {
   )
 })
 
-test('resolveSmtpConfig defaults to implicit TLS on port 465', async () => {
+test('resolveSmtpConfig uses fixed QQ implicit TLS settings', async () => {
   const { resolveSmtpConfig } = await mailerModule
 
-  assert.deepEqual(resolveSmtpConfig({ SMTP_HOST: 'smtp.gmail.com' }), {
-    host: 'smtp.gmail.com',
+  assert.deepEqual(resolveSmtpConfig(), {
+    host: 'smtp.qq.com',
     port: 465,
     timeoutMs: 15000,
     secure: true,
@@ -156,39 +156,30 @@ test('resolveSmtpConfig defaults to implicit TLS on port 465', async () => {
   })
 })
 
-test('resolveSmtpConfig enables STARTTLS by default on port 587', async () => {
+test('resolveSmtpConfig ignores SMTP environment overrides', async () => {
   const { resolveSmtpConfig } = await mailerModule
 
-  assert.deepEqual(resolveSmtpConfig({ SMTP_HOST: 'smtp.example.com', SMTP_PORT: '587' }), {
-    host: 'smtp.example.com',
-    port: 587,
-    timeoutMs: 15000,
-    secure: false,
-    starttls: true,
-    mode: 'starttls',
-  })
-})
-
-test('resolveSmtpConfig supports explicit plain SMTP', async () => {
-  const { resolveSmtpConfig } = await mailerModule
-
-  assert.deepEqual(
-    resolveSmtpConfig({
-      SMTP_HOST: 'smtp.example.com',
-      SMTP_PORT: '25',
-      SMTP_SECURE: 'false',
-      SMTP_STARTTLS: 'false',
-      SMTP_TIMEOUT_MS: '30000',
-    }),
-    {
-      host: 'smtp.example.com',
-      port: 25,
-      timeoutMs: 30000,
-      secure: false,
+  process.env.SMTP_HOST = 'smtp.example.com'
+  process.env.SMTP_PORT = '587'
+  process.env.SMTP_SECURE = 'false'
+  process.env.SMTP_STARTTLS = 'true'
+  process.env.SMTP_TIMEOUT_MS = '30000'
+  try {
+    assert.deepEqual(resolveSmtpConfig(), {
+      host: 'smtp.qq.com',
+      port: 465,
+      timeoutMs: 15000,
+      secure: true,
       starttls: false,
-      mode: 'plain',
-    }
-  )
+      mode: 'tls',
+    })
+  } finally {
+    delete process.env.SMTP_HOST
+    delete process.env.SMTP_PORT
+    delete process.env.SMTP_SECURE
+    delete process.env.SMTP_STARTTLS
+    delete process.env.SMTP_TIMEOUT_MS
+  }
 })
 
 test('smtpHandshakeCommands sends EHLO before and after STARTTLS', async () => {

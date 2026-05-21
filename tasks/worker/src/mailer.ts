@@ -65,20 +65,12 @@ function smtpError(stage: string, message: string): Error {
   return new Error(`SMTP ${stage} failed: ${message}`)
 }
 
-function parseBoolean(value: string | undefined): boolean | undefined {
-  if (value == null) return undefined
-  const normalized = value.trim().toLowerCase()
-  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true
-  if (['0', 'false', 'no', 'off'].includes(normalized)) return false
-  return undefined
-}
-
-export function resolveSmtpConfig(env: MailEnv = process.env): SmtpConfig {
-  const host = env.SMTP_HOST || 'smtp.gmail.com'
-  const port = Number(env.SMTP_PORT || 465)
-  const timeoutMs = Number(env.SMTP_TIMEOUT_MS || DEFAULT_SMTP_TIMEOUT_MS)
-  const secure = parseBoolean(env.SMTP_SECURE) ?? port === 465
-  const starttls = !secure && (parseBoolean(env.SMTP_STARTTLS) ?? port === 587)
+export function resolveSmtpConfig(): SmtpConfig {
+  const host = 'smtp.qq.com'
+  const port = 465
+  const timeoutMs = DEFAULT_SMTP_TIMEOUT_MS
+  const secure = true
+  const starttls = false
   return {
     host,
     port,

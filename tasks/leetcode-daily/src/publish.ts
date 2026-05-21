@@ -54,6 +54,7 @@ export async function publishContent(
         ...env,
         TASKS_PROJECT_ROOT: projectRoot,
         CONTENT_PROJECT_ROOT: projectRoot,
+        LEETCODE_DAILY_ONLY: 'true',
       },
       stdio: 'inherit',
     })
