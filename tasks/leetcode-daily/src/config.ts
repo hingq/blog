@@ -25,7 +25,7 @@ export function inferProjectRoot(
 
 export function projectRoot(): string {
   if (process.env.TASKS_PROJECT_ROOT) return path.resolve(process.env.TASKS_PROJECT_ROOT)
-  return inferProjectRoot()
+  return process.cwd()
 }
 
 export function cacheRoot(root = projectRoot()): string {

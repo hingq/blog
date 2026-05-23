@@ -39,7 +39,7 @@ test('publishContent skips when publishing is disabled', async () => {
   const { publishContent } = await publishModule
   let spawned = false
 
-  await publishContent('/repo', {
+  await publishContent('/repo', '/repo/data/blog/test-post.mdx', {
     env: { PUBLISH_CONTENT: 'false' },
     spawnCommand: () => {
       spawned = true
@@ -50,11 +50,12 @@ test('publishContent skips when publishing is disabled', async () => {
   assert.equal(spawned, false)
 })
 
-test('publishContent runs publish script from project root with content root env', async () => {
+test('publishContent runs publish script with --single flag and file path', async () => {
   const { publishContent } = await publishModule
   const calls = []
+  const blogFile = '/repo/data/blog/test-post.mdx'
 
-  await publishContent('/repo', {
+  await publishContent('/repo', blogFile, {
     taskDir: path.join('/repo', 'tasks', 'dist', 'tasks'),
     existsSync: () => false,
     env: { PUBLISH_CONTENT: 'true', MINIO_BUCKET: 'bucket' },
@@ -68,19 +69,23 @@ test('publishContent runs publish script from project root with content root env
 
   assert.equal(calls.length, 1)
   assert.equal(calls[0].command, process.execPath)
-  assert.deepEqual(calls[0].args, [path.join('/repo', 'scripts', 'publish-content.mjs')])
+  assert.deepEqual(calls[0].args, [
+    path.join('/repo', 'scripts', 'publish-content.mjs'),
+    '--single',
+    blogFile,
+  ])
   assert.equal(calls[0].options.cwd, '/repo')
   assert.equal(calls[0].options.env.TASKS_PROJECT_ROOT, '/repo')
   assert.equal(calls[0].options.env.CONTENT_PROJECT_ROOT, '/repo')
   assert.equal(calls[0].options.env.MINIO_BUCKET, 'bucket')
-  assert.equal(calls[0].options.env.LEETCODE_DAILY_ONLY, 'true')
+  assert.equal(calls[0].options.env.LEETCODE_DAILY_ONLY, undefined)
 })
 
 test('publishContent rejects when publish script exits unsuccessfully', async () => {
   const { publishContent } = await publishModule
   await assert.rejects(
     () =>
-      publishContent('/repo', {
+      publishContent('/repo', '/repo/data/blog/test-post.mdx', {
         env: {},
         spawnCommand: () => {
           const child = new EventEmitter()

@@ -45,6 +45,34 @@ test('inferProjectRoot supports production content rooted at /data', async () =>
   assert.equal(inferProjectRoot('/blog/tasks/tasks', existsSync), '/')
 })
 
+test('projectRoot defaults to process.cwd() when TASKS_PROJECT_ROOT is unset', async () => {
+  const { projectRoot } = await configModule
+  const previous = process.env.TASKS_PROJECT_ROOT
+  delete process.env.TASKS_PROJECT_ROOT
+
+  assert.equal(projectRoot(), process.cwd())
+
+  if (previous == null) {
+    delete process.env.TASKS_PROJECT_ROOT
+  } else {
+    process.env.TASKS_PROJECT_ROOT = previous
+  }
+})
+
+test('projectRoot uses TASKS_PROJECT_ROOT when set', async () => {
+  const { projectRoot } = await configModule
+  const previous = process.env.TASKS_PROJECT_ROOT
+
+  process.env.TASKS_PROJECT_ROOT = '/custom/root'
+  assert.equal(projectRoot(), path.resolve('/custom/root'))
+
+  if (previous == null) {
+    delete process.env.TASKS_PROJECT_ROOT
+  } else {
+    process.env.TASKS_PROJECT_ROOT = previous
+  }
+})
+
 test('resolveDotenvPath reads configured relative and absolute env paths', async () => {
   const { LEETCODE_DAILY_ENV_PATH, resolveDotenvPath } = await configModule
   const previous = process.env[LEETCODE_DAILY_ENV_PATH]

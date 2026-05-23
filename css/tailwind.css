@@ -47,6 +47,29 @@
   --z-60: 60;
   --z-70: 70;
   --z-80: 80;
+
+  /* Loading progress bar animation */
+  --animate-progress-bar: progress-bar 2s ease-in-out infinite;
+}
+
+/* Loading progress bar keyframes */
+@keyframes progress-bar {
+  0% {
+    transform: scaleX(0);
+  }
+  20% {
+    transform: scaleX(0.5);
+  }
+  50% {
+    transform: scaleX(0.8);
+  }
+  80% {
+    transform: scaleX(0.9);
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
 }
 
 /*

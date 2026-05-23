@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
+import { c, icon } from '../../shared/logger'
 
 export type PublishScriptOptions = {
   taskDir?: string
@@ -33,28 +34,29 @@ export function resolvePublishScriptPath(
 
 export async function publishContent(
   projectRoot: string,
+  blogFilePath: string,
   options: RunPublishOptions = {}
 ): Promise<void> {
   const env = options.env ?? process.env
   if (!shouldPublishContent(env)) {
-    console.log('4. 跳过内容发布。')
+    console.log(`  ${icon.skip}${c.gray('跳过内容发布 (PUBLISH_CONTENT=false)')}`)
     return
   }
 
   const scriptPath = resolvePublishScriptPath(projectRoot, options)
   const spawnCommand = options.spawnCommand ?? spawn
 
-  console.log('4. 正在发布博客内容...')
-  console.log(`   发布脚本: ${scriptPath}`)
+  console.log(`  ${icon.publish} ${c.dim('单文件模式')}`)
+  console.log(`     ${c.dim(`脚本: ${scriptPath}`)}`)
+  console.log(`     ${c.dim(`文件: ${blogFilePath}`)}`)
 
   await new Promise<void>((resolve, reject) => {
-    const child = spawnCommand(process.execPath, [scriptPath], {
+    const child = spawnCommand(process.execPath, [scriptPath, '--single', blogFilePath], {
       cwd: projectRoot,
       env: {
         ...env,
         TASKS_PROJECT_ROOT: projectRoot,
         CONTENT_PROJECT_ROOT: projectRoot,
-        LEETCODE_DAILY_ONLY: 'true',
       },
       stdio: 'inherit',
     })
@@ -65,7 +67,7 @@ export async function publishContent(
 
     child.once('exit', (code, signal) => {
       if (code === 0) {
-        console.log('   内容发布完成。')
+        console.log(`  ${icon.success} ${c.green('内容发布完成')}`)
         resolve()
         return
       }
@@ -75,3 +77,4 @@ export async function publishContent(
     })
   })
 }
+

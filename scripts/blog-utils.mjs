@@ -190,6 +190,48 @@ function getPrimaryImage(images, siteMetadata) {
   return images || siteMetadata.socialBanner
 }
 
+async function compileOneFile(file, siteMetadata) {
+  const source = await readFile(file, 'utf8')
+  const { data, content } = matter(source)
+  const sourceFilePath = path.relative(path.join(projectRoot, 'data'), file).replace(/\\/g, '/')
+  const flattenedPath = sourceFilePath.replace(/\.mdx?$/, '')
+
+  return {
+    title: data.title,
+    date: new Date(data.date).toISOString(),
+    tags: data.tags || [],
+    lastmod: data.lastmod ? new Date(data.lastmod).toISOString() : undefined,
+    draft: data.draft,
+    summary: data.summary,
+    images: data.images,
+    authors: data.authors,
+    layout: data.layout,
+    bibliography: data.bibliography,
+    canonicalUrl: data.canonicalUrl,
+    readingTime: readingTime(content),
+    slug: flattenedPath.replace(/^.+?\//, ''),
+    path: flattenedPath,
+    filePath: sourceFilePath,
+    toc: await extractTocHeadings(content),
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: data.title,
+      datePublished: new Date(data.date).toISOString(),
+      dateModified: data.lastmod
+        ? new Date(data.lastmod).toISOString()
+        : new Date(data.date).toISOString(),
+      description: data.summary,
+      image: getPrimaryImage(data.images, siteMetadata),
+      url: siteMetadata.siteUrl ? `${siteMetadata.siteUrl}/${flattenedPath}` : flattenedPath,
+    },
+    body: {
+      raw: content,
+      code: await compileMdx(content),
+    },
+  }
+}
+
 export async function compileLocalBlogPosts() {
   const files = await getMdxFiles(blogDir)
   const seenPaths = new Map()
@@ -197,56 +239,25 @@ export async function compileLocalBlogPosts() {
 
   return Promise.all(
     files.map(async (file) => {
-      const source = await readFile(file, 'utf8')
-      const { data, content } = matter(source)
-      const sourceFilePath = path.relative(path.join(projectRoot, 'data'), file).replace(/\\/g, '/')
-      const flattenedPath = sourceFilePath.replace(/\.mdx?$/, '')
-      const duplicatePath = seenPaths.get(flattenedPath)
+      const post = await compileOneFile(file, siteMetadata)
+      const duplicatePath = seenPaths.get(post.path)
 
       if (duplicatePath) {
         throw new Error(
-          `Duplicate blog path "${flattenedPath}" from "${duplicatePath}" and "${sourceFilePath}"`
+          `Duplicate blog path "${post.path}" from "${duplicatePath}" and "${post.filePath}"`
         )
       }
 
-      seenPaths.set(flattenedPath, sourceFilePath)
-
-      return {
-        title: data.title,
-        date: new Date(data.date).toISOString(),
-        tags: data.tags || [],
-        lastmod: data.lastmod ? new Date(data.lastmod).toISOString() : undefined,
-        draft: data.draft,
-        summary: data.summary,
-        images: data.images,
-        authors: data.authors,
-        layout: data.layout,
-        bibliography: data.bibliography,
-        canonicalUrl: data.canonicalUrl,
-        readingTime: readingTime(content),
-        slug: flattenedPath.replace(/^.+?\//, ''),
-        path: flattenedPath,
-        filePath: sourceFilePath,
-        toc: await extractTocHeadings(content),
-        structuredData: {
-          '@context': 'https://schema.org',
-          '@type': 'BlogPosting',
-          headline: data.title,
-          datePublished: new Date(data.date).toISOString(),
-          dateModified: data.lastmod
-            ? new Date(data.lastmod).toISOString()
-            : new Date(data.date).toISOString(),
-          description: data.summary,
-          image: getPrimaryImage(data.images, siteMetadata),
-          url: siteMetadata.siteUrl ? `${siteMetadata.siteUrl}/${flattenedPath}` : flattenedPath,
-        },
-        body: {
-          raw: content,
-          code: await compileMdx(content),
-        },
-      }
+      seenPaths.set(post.path, post.filePath)
+      return post
     })
   )
+}
+
+export async function compileSingleBlogPost(filePath) {
+  const absolutePath = path.resolve(filePath)
+  const siteMetadata = await loadSiteMetadata()
+  return compileOneFile(absolutePath, siteMetadata)
 }
 
 export async function loadBlogIndexFromEnv() {
