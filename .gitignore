@@ -58,3 +58,4 @@ tsconfig.tsbuildinfo
 /data/leetcode-daily/
 **/target/*
 **/dist
+!.yarn/releases/
