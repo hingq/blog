@@ -1,6 +1,6 @@
 # Tasks 调度器
 
-`tasks/` 使用 TypeScript/Node.js 实现，包含一个通用 worker 调度器和多个任务。构建后会生成发布包 `tasks/dist/`，调度器入口在包根目录，具体任务入口放在 `tasks/dist/tasks/`。
+`tasks/` 现在使用 TypeScript/Node.js 实现，包含一个通用 worker 调度器和多个任务包。
 
 ## 目录结构
 
@@ -9,11 +9,10 @@
 - `fetch-daily-info/`: 每日信息抓取任务。
 - `worker/config.json`: 当前调度配置。
 - `worker/config.example.json`: 配置示例。
-- `dist/`: 构建产物，包含 `worker.mjs`、打包后的配置文件和 `tasks/` 任务入口目录。
 
 ## 配置
 
-源码配置文件路径是 `tasks/worker/config.json`。构建后会复制到 `tasks/dist/config.json`，打包入口默认读取这个包内配置。构建后的配置会把任务入口参数改写为 `tasks/<entry>.mjs`，指向 `tasks/dist/tasks/`。
+默认配置文件路径是 `tasks/worker/config.json`。可以复制示例后修改：
 
 ```bash
 cp tasks/worker/config.example.json tasks/worker/config.json
@@ -29,8 +28,8 @@ cp tasks/worker/config.example.json tasks/worker/config.json
       "enabled": true,
       "cron": "0 8 * * *",
       "command": "node",
-      "args": ["leetcode-daily.mjs"],
-      "cwd": ".",
+      "args": ["dist/index.js"],
+      "cwd": "tasks/leetcode-daily",
       "env": {},
       "timeoutMs": 300000
     }
@@ -44,54 +43,10 @@ cp tasks/worker/config.example.json tasks/worker/config.json
 - `enabled`: 是否启用；未设置时默认启用。
 - `cron`: cron 表达式，按本机时区计算下一次执行时间。
 - `command`: 要执行的命令。
-- `args`: 传给命令的参数；相对路径以配置文件所在目录为基准。源码配置可使用任务入口文件名，构建后的配置会使用 `tasks/<entry>.mjs` 适配 `tasks/dist` 包。
+- `args`: 传给命令的参数。
 - `cwd`: 任务工作目录；相对路径以仓库根目录为基准。
 - `env`: 可选，任务进程环境变量。
 - `timeoutMs`: 可选，任务超时时间，单位毫秒。
-
-### LeetCode 每日题发布
-
-`leetcode_daily` 会在生成 `data/blog/leetcode-*.mdx` 后自动发布内容，发布过程复用 `scripts/publish-content.mjs`。开发环境使用源码目录下的发布脚本；生产包运行时使用 `tasks/dist/scripts/publish-content.mjs`，该脚本会随 `yarn tasks:build` 一起复制到发布包中，并包含本地依赖 `tasks/dist/scripts/blog-utils.mjs`。
-
-发布脚本需要 MinIO 相关环境变量，与 `yarn publish:content` 一致：
-
-- `MINIO_ENDPOINT`
-- `MINIO_BUCKET`
-- `MINIO_BLOG_INDEX_KEY`
-- `MINIO_SEARCH_INDEX_KEY`
-- `MINIO_ACCESS_KEY_ID`
-- `MINIO_SECRET_ACCESS_KEY`
-
-默认会读取项目根目录 `.env`。如果生产环境的环境变量文件不在默认位置，可以在 `config.json` 的 `leetcode_daily` job `env` 中配置：
-
-```json
-{
-  "name": "leetcode_daily",
-  "env": {
-    "LEETCODE_DAILY_ENV_PATH": "config/prod.env"
-  }
-}
-```
-
-相对路径以项目根目录为基准。要在本地或测试环境跳过发布，可以设置：
-
-```json
-{
-  "env": {
-    "PUBLISH_CONTENT": "false"
-  }
-}
-```
-
-Worker 发送任务失败通知时也会使用同一套环境变量解析规则。生产环境如果博客项目位于 `/blog`，设置 `TASKS_PROJECT_ROOT=/blog` 后，默认会读取 `/blog/.env`；也可以继续通过 `leetcode_daily` job 的 `LEETCODE_DAILY_ENV_PATH` 指向其他 env 文件。
-
-邮件发送固定使用 QQ 邮箱 SMTP 的 465 端口隐式 TLS，只需要配置发件地址、授权码和收件地址：
-
-```dotenv
-EMAIL_USER=your-qq-number@qq.com
-EMAIL_PASS=your-qq-smtp-authorization-code
-EMAIL_RECEIVER=receiver@example.com
-```
 
 ## 常用命令
 
@@ -108,20 +63,10 @@ yarn worker start
 也可以直接执行 worker：
 
 ```bash
-node tasks/worker/bin/worker.mjs list
-node tasks/worker/bin/worker.mjs run leetcode_daily
-node tasks/worker/bin/worker.mjs start
+node tasks/worker/bin/worker.cjs list
+node tasks/worker/bin/worker.cjs run leetcode_daily
+node tasks/worker/bin/worker.cjs start
 ```
-
-构建后也可以直接运行发布包：
-
-```bash
-node tasks/dist/worker.mjs list
-node tasks/dist/worker.mjs run fetch_daily_info
-node tasks/dist/worker.mjs start
-```
-
-如果把 `tasks/dist/` 拷贝到仓库外运行，并且任务需要读写博客内容或 `.env`，请设置 `TASKS_PROJECT_ROOT` 指向项目根目录。
 
 指定配置文件：
 

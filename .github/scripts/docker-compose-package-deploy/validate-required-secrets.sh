@@ -3,11 +3,7 @@
 set -euo pipefail
 
 required_vars=(
-  ACR_USERNAME
-  ACR_PASSWORD
-  ALIYUN_ACCESS_KEY_ID
-  ALIYUN_ACCESS_KEY_SECRET
-  ALIYUN_INSTANCE_ID
+  SSH_PRIVATE_KEY
 )
 
 for key in "${required_vars[@]}"; do

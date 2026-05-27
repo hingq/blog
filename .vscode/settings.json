@@ -1,4 +1,24 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.enablePromptUseWorkspaceTsdk": true
+  // 1. 开启保存时自动修复
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  },
+
+  // 2. 告诉 ESLint 插件，除了 JS/TS，这几种文件类型也要归它管
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "yaml", // 托管 YAML 文件给 ESLint
+    "shellscript" // 托管 Shell 文件给 ESLint
+  ],
+
+  // 3. 禁用其他格式化器对 YAML 和 Shell 的干扰（可选，避免跟 Prettier 插件打架）
+  "[yaml]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[shellscript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  }
 }
