@@ -4,8 +4,6 @@ set -euo pipefail
 
 : "${SSH_PRIVATE_KEY:?SSH_PRIVATE_KEY is required}"
 
-echo "🚀 Triggering ECS deploy..."
-echo "REGION_ID=$REGION_ID"
 
 # 1. 本地构建与打包
 echo "📦 Building docker image..."
