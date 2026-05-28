@@ -12,7 +12,6 @@
     "publish:content": "node ./scripts/publish-content.mjs",
     "worker": "node ./tasks/worker/bin/worker.mjs",
     "worker:build": "node ./tasks/build.mjs",
-    "tasks:build": "node ./tasks/build.mjs",
     "tasks:lint": "eslint tasks/**/*.ts",
     "test:worker": "yarn tasks:build && node --test tests/worker-*.test.cjs",
     "test:tasks": "yarn tasks:build && node --test tests/worker-*.test.cjs tests/leetcode-daily-*.test.cjs",

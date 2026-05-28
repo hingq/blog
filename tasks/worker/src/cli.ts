@@ -1,13 +1,7 @@
 #!/usr/bin/env node
-import { Command } from 'commander'
 import { pathToFileURL } from 'node:url'
-import { loadConfig } from './config'
-import { acquireLock } from './lock'
 import { createLogger, normalizeLogLevel } from './log'
 import { defaultConfigPath, lockPathForConfig, statePathForConfig } from './paths'
-import { runTask } from './runner'
-import { startScheduler } from './scheduler'
-import { readState } from './state'
 import type { LogLevel } from './types'
 
 export type ParsedCli = {
@@ -19,13 +13,13 @@ export type ParsedCli = {
   outputJson?: boolean
 }
 
-export function parseCli(argv: string[]): ParsedCli {
+export async function parseCli(argv: string[]): Promise<ParsedCli> {
   let parsed: ParsedCli | undefined
-  const program = createProgram((cli) => {
+  const program = await createProgram((cli) => {
     parsed = cli
   })
   program.exitOverride()
-  program.parse(argv)
+  await program.parseAsync(argv)
   if (!parsed) throw new Error('命令必须是 start, run, list, status')
   return parsed
 }
@@ -44,7 +38,8 @@ function baseOptions(
   }
 }
 
-export function createProgram(onCommand: (cli: ParsedCli) => void | Promise<void> = runCli) {
+export async function createProgram(onCommand: (cli: ParsedCli) => void | Promise<void> = runCli) {
+  const { Command } = await import('commander')
   const program = new Command()
   program
     .name('worker')
@@ -107,6 +102,7 @@ export function createProgram(onCommand: (cli: ParsedCli) => void | Promise<void
 
 export async function runCli(cli: ParsedCli) {
   const log = createLogger(cli.logLevel)
+  const { loadConfig } = await import('./config')
   const config = loadConfig(cli.config)
   const jobs = cli.all ? config.jobs : config.jobs.filter((job) => job.enabled)
 
@@ -126,6 +122,7 @@ export async function runCli(cli: ParsedCli) {
   }
 
   if (cli.command === 'status') {
+    const { readState } = await import('./state')
     const state = readState(statePathForConfig(cli.config))
     const status = jobs.map((job) => ({ ...job, state: state?.jobs[job.name] }))
     if (cli.outputJson) {
@@ -147,11 +144,13 @@ export async function runCli(cli: ParsedCli) {
     const job = config.jobs.find((candidate) => candidate.name === cli.name)
     if (!job) throw new Error(`找不到任务: ${cli.name}`)
     if (!job.enabled) throw new Error(`任务已关闭: ${job.name}`)
+    const { runTask } = await import('./runner')
     const result = await runTask(job)
     if (!result.ok) process.exitCode = 1
     return
   }
 
+  const { acquireLock } = await import('./lock')
   const release = acquireLock(lockPathForConfig(cli.config))
   process.once('SIGINT', () => {
     release()
@@ -161,12 +160,13 @@ export async function runCli(cli: ParsedCli) {
     release()
     process.exit(143)
   })
+  const { startScheduler } = await import('./scheduler')
   await startScheduler(jobs, statePathForConfig(cli.config), log)
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   createProgram()
-    .parseAsync(process.argv)
+    .then((program) => program.parseAsync(process.argv))
     .catch((error) => {
       console.error(error instanceof Error ? error.message : error)
       process.exit(1)

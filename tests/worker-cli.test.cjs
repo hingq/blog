@@ -6,7 +6,7 @@ const cliModule = import('../tasks/dist/worker-cli.mjs')
 
 test('parseCli parses list all', async () => {
   const { parseCli } = await cliModule
-  const cli = parseCli(['node', 'worker', 'list', '--all'])
+  const cli = await parseCli(['node', 'worker', 'list', '--all'])
 
   assert.equal(cli.command, 'list')
   assert.equal(cli.all, true)
@@ -14,21 +14,21 @@ test('parseCli parses list all', async () => {
 
 test('parseCli uses the packaged worker config by default', async () => {
   const { parseCli } = await cliModule
-  const cli = parseCli(['node', 'worker', 'list'])
+  const cli = await parseCli(['node', 'worker', 'list'])
 
   assert.equal(cli.config, path.join(__dirname, '..', 'tasks', 'dist', 'config.json'))
 })
 
 test('parseCli parses list alias', async () => {
   const { parseCli } = await cliModule
-  const cli = parseCli(['node', 'worker', 'ls'])
+  const cli = await parseCli(['node', 'worker', 'ls'])
 
   assert.equal(cli.command, 'list')
 })
 
 test('parseCli parses run command name', async () => {
   const { parseCli } = await cliModule
-  const cli = parseCli(['node', 'worker', '--config', 'worker.json', 'run', 'daily'])
+  const cli = await parseCli(['node', 'worker', '--config', 'worker.json', 'run', 'daily'])
 
   assert.equal(cli.command, 'run')
   assert.equal(cli.config, 'worker.json')
@@ -37,7 +37,7 @@ test('parseCli parses run command name', async () => {
 
 test('parseCli parses config and log level after subcommand', async () => {
   const { parseCli } = await cliModule
-  const cli = parseCli(['node', 'worker', 'list', '-c', 'worker.json', '-l', 'debug'])
+  const cli = await parseCli(['node', 'worker', 'list', '-c', 'worker.json', '-l', 'debug'])
 
   assert.equal(cli.command, 'list')
   assert.equal(cli.config, 'worker.json')
@@ -46,14 +46,14 @@ test('parseCli parses config and log level after subcommand', async () => {
 
 test('parseCli parses status', async () => {
   const { parseCli } = await cliModule
-  const cli = parseCli(['node', 'worker', 'status'])
+  const cli = await parseCli(['node', 'worker', 'status'])
 
   assert.equal(cli.command, 'status')
 })
 
 test('parseCli parses json output option', async () => {
   const { parseCli } = await cliModule
-  const cli = parseCli(['node', 'worker', 'list', '--json'])
+  const cli = await parseCli(['node', 'worker', 'list', '--json'])
 
   assert.equal(cli.command, 'list')
   assert.equal(cli.outputJson, true)

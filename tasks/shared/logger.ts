@@ -31,9 +31,6 @@ export const icon = {
   skip: '⏭️ ',
   error: '❌',
   warning: '⚠️ ',
-  info: 'ℹ️ ',
-  cache: '💾',
-  network: '🌐',
   file: '📄',
   mail: '📧',
   publish: '📤',
@@ -80,7 +77,7 @@ export function createTaskLogger(taskName: string) {
   }
 
   function info(message: string) {
-    console.log(`  ${icon.info} ${message}`)
+    console.log(`   ${message}`)
   }
 
   function detail(message: string) {
@@ -104,7 +101,7 @@ export function createTaskLogger(taskName: string) {
   }
 
   function cacheHit(message: string) {
-    console.log(`  ${icon.cache} ${c.dim(message)}`)
+    console.log(`   ${c.dim(message)}`)
   }
 
   function timing(ms: number) {
@@ -122,7 +119,9 @@ export function createTaskLogger(taskName: string) {
     const elapsed = Date.now() - taskStart
     console.log('')
     divider()
-    console.log(`${icon.done} ${c.bold(c.green('任务全部完成'))}${' '.repeat(14)}${icon.time}${c.dim(`总耗时: ${formatDuration(elapsed)}`)}`)
+    console.log(
+      `${icon.done} ${c.bold(c.green('任务全部完成'))}${' '.repeat(14)}${icon.time}${c.dim(`总耗时: ${formatDuration(elapsed)}`)}`
+    )
     console.log('')
   }
 
@@ -153,7 +152,7 @@ export function createPublishLogger(prefix: string) {
   }
 
   function logInfo(message: string) {
-    console.log(`  ${icon.info} ${message}`)
+    console.log(`   ${message}`)
   }
 
   function logDetail(message: string) {

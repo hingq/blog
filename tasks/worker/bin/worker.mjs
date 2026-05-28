@@ -12,7 +12,10 @@ if (!fs.existsSync(workerBundle)) {
 }
 
 import(workerBundle)
-  .then((mod) => mod.createProgram().parseAsync(process.argv))
+  .then(async (mod) => {
+    const program = await mod.createProgram()
+    await program.parseAsync(process.argv)
+  })
   .catch((error) => {
     console.error(error instanceof Error ? error.message : error)
     process.exit(1)

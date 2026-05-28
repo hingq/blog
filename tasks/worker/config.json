@@ -6,7 +6,7 @@
       "cron": "0 8 * * *",
       "command": "node",
       "args": ["leetcode-daily.mjs"],
-      "cwd": ".",
+      "cwd": "/blog/tasks",
       "env": {
         "BLOG_INDEX_URL": "http://47.108.133.169:9000/blog/blog-index.json",
         "SEARCH_INDEX_URL": "http://47.108.133.169:9000/blog/search.json",
@@ -32,7 +32,7 @@
       "cron": "30 8 * * *",
       "command": "node",
       "args": ["fetch-daily-info.mjs"],
-      "cwd": ".",
+      "cwd": "/blog/tasks",
       "env": {},
       "timeoutMs": 300000
     }

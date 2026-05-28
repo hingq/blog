@@ -6,17 +6,13 @@ const shared = {
   platform: 'node',
   target: 'node20',
   format: 'esm',
+  splitting: true,
   sourcemap: false,
-  banner: {
-    js: [
-      "import { createRequire as __taskCreateRequire } from 'node:module';",
-      "import { fileURLToPath as __taskFileURLToPath } from 'node:url';",
-      "import { dirname as __taskDirname } from 'node:path';",
-      'const require = __taskCreateRequire(import.meta.url);',
-      'const __filename = __taskFileURLToPath(import.meta.url);',
-      'const __dirname = __taskDirname(__filename);',
-    ].join('\n'),
-  },
+  metafile: true, // 已经开启
+  bundle: true,
+  logLevel: 'info',
+  chunkNames: 'chunks/[name]-[hash]',
+  outExtension: { '.js': '.mjs' },
 }
 
 const distRoot = 'tasks/dist'
@@ -58,30 +54,14 @@ async function copyConfig() {
   await writePackagedConfig('tasks/worker/config.example.json', 'config.example.json')
 }
 
+// 修改此函数：接收并返回 esbuild 的 build 结果
 async function buildPublishScripts() {
   await fs.mkdir(scriptBundleRoot, { recursive: true })
   await fs.writeFile(path.join(scriptBundleRoot, 'package.json'), '{\n  "type": "module"\n}\n')
   return esbuild.build({
     ...shared,
-    format: 'esm',
-    bundle: true,
-    splitting: true,
-    logLevel: 'info',
     entryPoints: ['scripts/publish-content.mjs', 'scripts/blog-utils.mjs'],
     outdir: scriptBundleRoot,
-    entryNames: '[name]',
-    chunkNames: 'chunks/[name]-[hash]',
-    outExtension: { '.js': '.mjs' },
-  })
-}
-
-async function buildModule(entryPoint, outputName, outputRoot = distRoot) {
-  return esbuild.build({
-    ...shared,
-    bundle: true,
-    logLevel: 'info',
-    entryPoints: [entryPoint],
-    outfile: path.join(outputRoot, outputName),
   })
 }
 
@@ -89,27 +69,57 @@ await fs.rm(distRoot, { recursive: true, force: true })
 await fs.rm(legacyTargetRoot, { recursive: true, force: true })
 await fs.mkdir(taskBundleRoot, { recursive: true })
 
-await Promise.all([
-  ...(await sourceEntryPoints('tasks/worker')).map((entryPoint) =>
-    buildModule(entryPoint, `worker-${path.basename(entryPoint, '.ts')}.mjs`)
-  ),
-  ...(await sourceEntryPoints('tasks/leetcode-daily')).map((entryPoint) =>
-    buildModule(
-      entryPoint,
-      `leetcode-daily-${path.basename(entryPoint, '.ts')}.mjs`,
-      taskBundleRoot
-    )
-  ),
-  ...(await sourceEntryPoints('tasks/fetch-daily-info')).map((entryPoint) =>
-    buildModule(
-      entryPoint,
-      `fetch-daily-info-${path.basename(entryPoint, '.ts')}.mjs`,
-      taskBundleRoot
-    )
-  ),
-  buildModule('tasks/worker/src/cli.ts', 'worker.mjs'),
-  buildModule('tasks/leetcode-daily/src/index.ts', 'leetcode-daily.mjs', taskBundleRoot),
-  buildModule('tasks/fetch-daily-info/src/index.ts', 'fetch-daily-info.mjs', taskBundleRoot),
+const entryPoints = {}
+
+// 1. worker files
+const workerFiles = await sourceEntryPoints('tasks/worker')
+for (const file of workerFiles) {
+  const base = path.basename(file, '.ts')
+  entryPoints[`worker-${base}`] = file
+}
+entryPoints['worker'] = 'tasks/worker/src/cli.ts'
+
+// 2. leetcode-daily files
+const leetcodeFiles = await sourceEntryPoints('tasks/leetcode-daily')
+for (const file of leetcodeFiles) {
+  const base = path.basename(file, '.ts')
+  entryPoints[`tasks/leetcode-daily-${base}`] = file
+}
+entryPoints['tasks/leetcode-daily'] = 'tasks/leetcode-daily/src/index.ts'
+
+// 3. fetch-daily-info files
+const fetchFiles = await sourceEntryPoints('tasks/fetch-daily-info')
+for (const file of fetchFiles) {
+  const base = path.basename(file, '.ts')
+  entryPoints[`tasks/fetch-daily-info-${base}`] = file
+}
+entryPoints['tasks/fetch-daily-info'] = 'tasks/fetch-daily-info/src/index.ts'
+
+// --- 核心修改部分 ---
+// 1. 接收 Promise.all 返回的各个任务结果
+const [mainResult, _, scriptsResult] = await Promise.all([
+  esbuild.build({
+    ...shared,
+    entryPoints,
+    outdir: distRoot,
+  }),
   copyConfig(),
   buildPublishScripts(),
 ])
+
+// 2. 将主打包的元数据写入 tasks/dist/meta-main.json
+if (mainResult.metafile) {
+  await fs.writeFile(
+    path.join(distRoot, 'meta-main.json'),
+    JSON.stringify(mainResult.metafile, null, 2)
+  )
+}
+
+// 3. 将发布脚本的元数据写入 tasks/dist/meta-scripts.json
+if (scriptsResult.metafile) {
+  await fs.writeFile(
+    path.join(distRoot, 'meta-scripts.json'),
+    JSON.stringify(scriptsResult.metafile, null, 2)
+  )
+}
+// --------------------
