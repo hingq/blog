@@ -8,7 +8,7 @@ const shared = {
   format: 'esm',
   splitting: true,
   sourcemap: false,
-  metafile: true, // 已经开启
+  // metafile: true, //
   bundle: true,
   logLevel: 'info',
   chunkNames: 'chunks/[name]-[hash]',
@@ -26,15 +26,6 @@ const packagedTaskArgs = new Map([
   ['fetch-daily-info.cjs', 'tasks/fetch-daily-info.mjs'],
   ['fetch-daily-info.mjs', 'tasks/fetch-daily-info.mjs'],
 ])
-
-async function sourceEntryPoints(packageRoot) {
-  const srcRoot = path.join(packageRoot, 'src')
-  const files = await fs.readdir(srcRoot)
-  return files
-    .filter((file) => file.endsWith('.ts') && file !== 'types.ts')
-    .sort()
-    .map((file) => path.join(srcRoot, file))
-}
 
 async function writePackagedConfig(sourcePath, outputName) {
   const config = JSON.parse(await fs.readFile(sourcePath, 'utf8'))
@@ -69,31 +60,14 @@ await fs.rm(distRoot, { recursive: true, force: true })
 await fs.rm(legacyTargetRoot, { recursive: true, force: true })
 await fs.mkdir(taskBundleRoot, { recursive: true })
 
-const entryPoints = {}
-
-// 1. worker files
-const workerFiles = await sourceEntryPoints('tasks/worker')
-for (const file of workerFiles) {
-  const base = path.basename(file, '.ts')
-  entryPoints[`worker-${base}`] = file
+// Three runnable entry points; esbuild's `bundle: true` pulls in each
+// entry's imported modules, and `splitting: true` extracts shared code
+// (and the worker's dynamic imports) into `chunks/`.
+const entryPoints = {
+  worker: 'tasks/worker/src/cli.ts',
+  'tasks/leetcode-daily': 'tasks/leetcode-daily/src/index.ts',
+  'tasks/fetch-daily-info': 'tasks/fetch-daily-info/src/index.ts',
 }
-entryPoints['worker'] = 'tasks/worker/src/cli.ts'
-
-// 2. leetcode-daily files
-const leetcodeFiles = await sourceEntryPoints('tasks/leetcode-daily')
-for (const file of leetcodeFiles) {
-  const base = path.basename(file, '.ts')
-  entryPoints[`tasks/leetcode-daily-${base}`] = file
-}
-entryPoints['tasks/leetcode-daily'] = 'tasks/leetcode-daily/src/index.ts'
-
-// 3. fetch-daily-info files
-const fetchFiles = await sourceEntryPoints('tasks/fetch-daily-info')
-for (const file of fetchFiles) {
-  const base = path.basename(file, '.ts')
-  entryPoints[`tasks/fetch-daily-info-${base}`] = file
-}
-entryPoints['tasks/fetch-daily-info'] = 'tasks/fetch-daily-info/src/index.ts'
 
 // --- 核心修改部分 ---
 // 1. 接收 Promise.all 返回的各个任务结果
