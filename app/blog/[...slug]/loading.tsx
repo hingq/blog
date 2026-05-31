@@ -17,7 +17,7 @@ export default function Loading() {
                 </div>
               </dl>
               <div className="flex justify-center">
-                <div className="mt-2 h-10 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-800 md:h-12" />
+                <div className="mt-2 h-10 w-3/4 animate-pulse rounded bg-gray-200 md:h-12 dark:bg-gray-800" />
               </div>
             </div>
           </header>
@@ -37,7 +37,7 @@ export default function Loading() {
               </dd>
             </dl>
             <div className="divide-y divide-gray-200 xl:col-span-3 xl:row-span-2 xl:pb-0 dark:divide-gray-700">
-              <div className="prose dark:prose-invert max-w-none pt-10 pb-8 space-y-6">
+              <div className="prose dark:prose-invert max-w-none space-y-6 pt-10 pb-8">
                 <div className="space-y-3">
                   <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
                   <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />

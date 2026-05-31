@@ -4,7 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { FlatCompat } from '@eslint/eslintrc'
 import eslintPluginYml from 'eslint-plugin-yml'
-import eslintPluginFormat from 'eslint-plugin-format'
+import eslintPluginPrettier from 'eslint-plugin-prettier' // 1. 显式引入 prettier 插件
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -14,7 +14,7 @@ const compat = new FlatCompat({
 
 export default [
   {
-    // 1. 全局忽略
+    // 全局忽略
     ignores: ['next-env.d.ts', 'next.config.js'],
   },
 
@@ -35,6 +35,10 @@ export default [
 
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
+    // 2. 显式将 prettier 插件注册到当前配置块中
+    plugins: {
+      prettier: eslintPluginPrettier,
+    },
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -80,6 +84,9 @@ export default [
   })),
   {
     files: ['**/*.{yaml,yml}'],
+    plugins: {
+      prettier: eslintPluginPrettier, // 3. YAML 块也加上它
+    },
     rules: {
       'prettier/prettier': 'error',
     },
