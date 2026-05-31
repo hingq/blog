@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useState, MouseEvent } from 'react'
 import { useTheme } from 'next-themes'
 import {
   Menu,
@@ -115,7 +115,6 @@ const ThemeSwitch = () => {
             {/* 3. 修复：RadioGroup 只负责绑定 value，不要在它的 onChange 里传事件 */}
             <RadioGroup value={theme}>
               <div className="p-1">
-
                 {/* Light 选项 */}
                 <Radio value="light">
                   <MenuItem>
@@ -125,7 +124,9 @@ const ThemeSwitch = () => {
                         onClick={(e) => handleThemeChange('light', e)}
                         className={`${focus ? 'bg-primary-600 text-white' : 'text-gray-900 dark:text-gray-100'} group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                       >
-                        <div className="mr-2"><Sun /></div>
+                        <div className="mr-2">
+                          <Sun />
+                        </div>
                         Light
                       </button>
                     )}
@@ -140,7 +141,9 @@ const ThemeSwitch = () => {
                         onClick={(e) => handleThemeChange('dark', e)}
                         className={`${focus ? 'bg-primary-600 text-white' : 'text-gray-900 dark:text-gray-100'} group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                       >
-                        <div className="mr-2"><Moon /></div>
+                        <div className="mr-2">
+                          <Moon />
+                        </div>
                         Dark
                       </button>
                     )}
@@ -155,13 +158,14 @@ const ThemeSwitch = () => {
                         onClick={(e) => handleThemeChange('system', e)}
                         className={`${focus ? 'bg-primary-600 text-white' : 'text-gray-900 dark:text-gray-100'} group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                       >
-                        <div className="mr-2"><Monitor /></div>
+                        <div className="mr-2">
+                          <Monitor />
+                        </div>
                         System
                       </button>
                     )}
                   </MenuItem>
                 </Radio>
-
               </div>
             </RadioGroup>
           </MenuItems>

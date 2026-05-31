@@ -84,23 +84,4 @@ export default [
       'prettier/prettier': 'error',
     },
   },
-
-  // ==================== Shell (.sh) 配置 ====================
-  {
-    files: ['**/*.sh', '**/.*shrc', '**/.bash*'],
-    plugins: {
-      format: eslintPluginFormat,
-    },
-    // ✨ 核心修正：使用 eslint-plugin-format 内置的专用处理器
-    // 它会将 sh 文件作为纯文本块提取，直接跳过 ESLint 核心的 JS AST 检查
-    processor: eslintPluginFormat.processors.format,
-    rules: {
-      'format/prettier': [
-        'error',
-        {
-          parser: 'sh',
-        },
-      ],
-    },
-  },
 ]
