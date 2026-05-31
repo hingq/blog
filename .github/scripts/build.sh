@@ -27,6 +27,6 @@ scp -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ./blog-linux-amd64.tar root@4
 
 # 4. 远程执行安装脚本
 echo "🏃 Executing remote deploy script..."
-ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" root@47.108.133.169 "/usr/bin/bash /blog/install.sh"
+ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" root@47.108.133.169 "cd /blog &&/usr/bin/bash /blog/install.sh"
 
 echo "🎉 Deployment completed successfully!"
