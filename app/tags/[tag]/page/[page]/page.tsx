@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { getPostsByTag, getTagCounts } from '@/lib/blog'
 
 const POSTS_PER_PAGE = 5
-export const dynamic = 'force-dynamic'
+export const revalidate = 600
 
 export default async function TagPage(props: { params: Promise<{ tag: string; page: string }> }) {
   const params = await props.params

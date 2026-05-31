@@ -14,7 +14,7 @@ import { getAuthorsBySlugs } from '@/lib/authors'
 import { Suspense } from 'react'
 import Loading from '@/components/loading'
 const defaultLayout = 'PostLayout'
-export const dynamic = 'force-dynamic'
+export const revalidate = 600
 const layouts = {
   PostSimple,
   PostLayout,

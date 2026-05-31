@@ -223,46 +223,89 @@ async function fetchPostFromPublicUrl(postSlug: string): Promise<BlogPost> {
   return normalizePostToc(post)
 }
 
+import { createTtlCache } from '@/lib/cache'
+
+const INDEX_CACHE_TTL = 600_000 // 10 minutes
+const POST_CACHE_TTL = 600_000 // 10 minutes
+
+const indexCache = createTtlCache<CoreBlogPost[]>(INDEX_CACHE_TTL)
+const postCache = new Map<string, { data: BlogPost; expiresAt: number }>()
+
+function getCachedPost(postSlug: string): BlogPost | null {
+  const entry = postCache.get(postSlug)
+  if (entry && Date.now() < entry.expiresAt) {
+    return entry.data
+  }
+  postCache.delete(postSlug)
+  return null
+}
+
+function setCachedPost(postSlug: string, data: BlogPost): void {
+  postCache.set(postSlug, { data, expiresAt: Date.now() + POST_CACHE_TTL })
+}
+
+export function clearBlogCache(): void {
+  logBlogSource('clearing blog caches')
+  indexCache.clear()
+  postCache.clear()
+}
+
 const loadPostIndex = cache(async (): Promise<CoreBlogPost[]> => {
+  const cached = indexCache.get()
+  if (cached) {
+    logBlogSource('using cached blog index')
+    return cached
+  }
+
   const blogIndexSource = getRuntimeContentSource({
     remoteUrlEnvName: 'BLOG_INDEX_URL',
     minioKeyEnvName: 'MINIO_BLOG_INDEX_KEY',
   })
 
+  let result: CoreBlogPost[]
   if (blogIndexSource === 'minio') {
     logBlogSource('using MinIO blog index source')
-    return fetchIndexFromMinio()
-  }
-
-  if (blogIndexSource === 'remote') {
+    result = await fetchIndexFromMinio()
+  } else if (blogIndexSource === 'remote') {
     logBlogSource('using public blog index source')
-    return fetchIndexFromPublicUrl()
+    result = await fetchIndexFromPublicUrl()
+  } else {
+    const error = new Error(
+      'Blog source is not configured. Set MinIO runtime env vars or BLOG_INDEX_URL.'
+    )
+    warnBlogSource('missing blog source configuration', error)
+    throw error
   }
 
-  const error = new Error(
-    'Blog source is not configured. Set MinIO runtime env vars or BLOG_INDEX_URL.'
-  )
-  warnBlogSource('missing blog source configuration', error)
-  throw error
+  indexCache.set(result)
+  return result
 })
 
 const loadPostBySlug = cache(async (postSlug: string): Promise<BlogPost | undefined> => {
+  const cached = getCachedPost(postSlug)
+  if (cached) {
+    logBlogSource(`using cached post for "${postSlug}"`)
+    return cached
+  }
+
   try {
+    let result: BlogPost
     if (hasMinioRuntimeConfig()) {
       logBlogSource('using MinIO post source')
-      return await fetchPostFromMinio(postSlug)
-    }
-
-    if (BLOG_POSTS_BASE_URL) {
+      result = await fetchPostFromMinio(postSlug)
+    } else if (BLOG_POSTS_BASE_URL) {
       logBlogSource('using public post source')
-      return await fetchPostFromPublicUrl(postSlug)
+      result = await fetchPostFromPublicUrl(postSlug)
+    } else {
+      const error = new Error(
+        'Post source is not configured. Set MinIO runtime env vars or BLOG_POSTS_BASE_URL.'
+      )
+      warnBlogSource('missing post source configuration', error)
+      throw error
     }
 
-    const error = new Error(
-      'Post source is not configured. Set MinIO runtime env vars or BLOG_POSTS_BASE_URL.'
-    )
-    warnBlogSource('missing post source configuration', error)
-    throw error
+    setCachedPost(postSlug, result)
+    return result
   } catch (err) {
     warnBlogSource(`failed to load post "${postSlug}"`, err)
     return undefined

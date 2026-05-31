@@ -5,7 +5,7 @@ import { Metadata } from 'next'
 import { getPostsByTag, getTagCounts } from '@/lib/blog'
 
 const POSTS_PER_PAGE = 5
-export const dynamic = 'force-dynamic'
+export const revalidate = 600
 
 export async function generateMetadata(props: {
   params: Promise<{ tag: string }>

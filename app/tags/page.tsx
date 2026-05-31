@@ -5,7 +5,7 @@ import { slug } from 'github-slugger'
 import { genPageMetadata } from 'app/seo'
 
 export const metadata = genPageMetadata({ title: 'Tags', description: 'Things I blog about' })
-export const dynamic = 'force-dynamic'
+export const revalidate = 600
 
 export default async function Page() {
   const tagCounts = await getTagCounts()

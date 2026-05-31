@@ -7,4 +7,7 @@
 - [x] 文章加载loading，suspended
 - [x] 文章点击配置view transition
 - [x] 邮件发送的排版问题
-- [X] 内容，代码块不能太多
+- [x] 内容，代码块不能太多
+- []代码块复制按钮重新优化
+- []请求缓存策略修改优化
+- [] 请求loading，suspended
