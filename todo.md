@@ -7,4 +7,4 @@
 - [x] 文章加载loading，suspended
 - [x] 文章点击配置view transition
 - [x] 邮件发送的排版问题
-- [] 邮件发送的内容，代码块不能太多
+- [X] 内容，代码块不能太多
