@@ -11180,6 +11180,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"next-view-transitions@npm:^0.3.0":
+  version: 0.3.5
+  resolution: "next-view-transitions@npm:0.3.5"
+  peerDependencies:
+    next: ">=14.0.0"
+    react: ">=18.2.0 || ^19.0.0"
+    react-dom: ">=18.2.0 || ^19.0.0"
+  checksum: 84fdcca67968ddd0d757cb52a46c0c993bb71254965291c5c4f45d218706e81a6b944992f93ba7155cc68498beefc2f9941776b53a62d88c91b04721065df083
+  languageName: node
+  linkType: hard
+
 "next@npm:15.5.12":
   version: 15.5.12
   resolution: "next@npm:15.5.12"
@@ -13670,6 +13681,7 @@ __metadata:
     lint-staged: ^16.2.7
     next: 15.5.12
     next-themes: ^0.4.6
+    next-view-transitions: ^0.3.0
     pliny: 0.4.1
     postcss: ^8.5.6
     prettier: ^3.8.1

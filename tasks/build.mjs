@@ -1,18 +1,32 @@
 import esbuild from 'esbuild'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { builtinModules } from 'node:module'
+const safeCjsShimBanner = {
+  js: `
+import { createRequire as _safeCreateRequire } from 'module';
+import { fileURLToPath as _safeFileURLToPath } from 'url';
+import { dirname as _safeDirname } from 'path';
 
+// 注入防冲突的全局变量
+const require = _safeCreateRequire(import.meta.url);
+const __filename = _safeFileURLToPath(import.meta.url);
+const __dirname = _safeDirname(__filename);
+`.trim(),
+}
 const shared = {
   platform: 'node',
   target: 'node20',
   format: 'esm',
-  splitting: true,
+  // splitting: true,
   sourcemap: false,
   // metafile: true, //
   bundle: true,
   logLevel: 'info',
   chunkNames: 'chunks/[name]-[hash]',
   outExtension: { '.js': '.mjs' },
+  external: [...builtinModules, ...builtinModules.map((m) => `node:${m}`)],
+  banner: safeCjsShimBanner,
 }
 
 const distRoot = 'tasks/dist'

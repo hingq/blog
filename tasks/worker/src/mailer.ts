@@ -270,7 +270,7 @@ export async function sendMail(subject: string, body: string) {
         `From: ${user}`,
         `To: ${to}`,
         `Subject: ${subject}`,
-        'Content-Type: text/plain; charset=utf-8',
+        'Content-Type: text/html; charset=utf-8',
         '',
         dotStuffBody(body),
         '.',

@@ -51,7 +51,16 @@ export default function PostLayout({ content, authorDetails, next, prev, childre
                 </div>
               </dl>
               <div>
-                <PageTitle>{title}</PageTitle>
+                <PageTitle>
+                  <span
+                    style={{
+                      viewTransitionName: `post-title-${slug.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+                    }}
+                    className="block"
+                  >
+                    {title}
+                  </span>
+                </PageTitle>
               </div>
             </div>
           </header>

@@ -11,7 +11,8 @@ import siteMetadata from '@/data/siteMetadata'
 import { notFound } from 'next/navigation'
 import { getAdjacentPosts, getPostBySlug } from '@/lib/blog'
 import { getAuthorsBySlugs } from '@/lib/authors'
-
+import { Suspense } from 'react'
+import Loading from '@/components/loading'
 const defaultLayout = 'PostLayout'
 export const dynamic = 'force-dynamic'
 const layouts = {

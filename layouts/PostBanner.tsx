@@ -35,7 +35,16 @@ export default function PostMinimal({ content, next, prev, children }: LayoutPro
               </Bleed>
             </div>
             <div className="relative pt-10">
-              <PageTitle>{title}</PageTitle>
+              <PageTitle>
+                <span
+                  style={{
+                    viewTransitionName: `post-title-${slug.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+                  }}
+                  className="block"
+                >
+                  {title}
+                </span>
+              </PageTitle>
             </div>
           </div>
           <div className="prose dark:prose-invert max-w-none py-4">{children}</div>

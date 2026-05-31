@@ -129,7 +129,12 @@ export default function ListLayout({
                   </dl>
                   <div className="space-y-3 xl:col-span-3">
                     <div>
-                      <h3 className="text-2xl leading-8 font-bold tracking-tight">
+                      <h3
+                        className="text-2xl leading-8 font-bold tracking-tight"
+                        style={{
+                          viewTransitionName: `post-title-${(post.slug || path.replace(/^blog\//, '')).replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+                        }}
+                      >
                         <Link href={`/${path}`} className="text-gray-900 dark:text-gray-100">
                           {title}
                         </Link>

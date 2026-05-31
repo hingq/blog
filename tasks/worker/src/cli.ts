@@ -3,7 +3,8 @@ import { pathToFileURL } from 'node:url'
 import { createLogger, normalizeLogLevel } from './log'
 import { defaultConfigPath, lockPathForConfig, statePathForConfig } from './paths'
 import type { LogLevel } from './types'
-
+import { Command } from 'commander'
+const program = new Command()
 export type ParsedCli = {
   config: string
   logLevel: LogLevel
@@ -39,8 +40,6 @@ function baseOptions(
 }
 
 export async function createProgram(onCommand: (cli: ParsedCli) => void | Promise<void> = runCli) {
-  const { Command } = await import('commander')
-  const program = new Command()
   program
     .name('worker')
     .description('Language-agnostic task scheduler')

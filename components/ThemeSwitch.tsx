@@ -54,11 +54,44 @@ const Monitor = () => (
 )
 const Blank = () => <svg className="h-6 w-6" />
 
+// ...（Sun, Moon, Monitor, Blank 图标组件保持不变）...
+
 const ThemeSwitch = () => {
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme, resolvedTheme } = useTheme()
 
-  // When mounted on client, now we can show the UI
+  // 2. 完美的视图过渡核心函数
+  const handleThemeChange = (nextTheme: string, e: MouseEvent<HTMLButtonElement>) => {
+    // 降级处理
+    if (!document.startViewTransition) {
+      setTheme(nextTheme)
+      return
+    }
+
+    const x = e.clientX
+    const y = e.clientY
+
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    )
+
+    const root = document.documentElement
+    root.classList.add('theme-transition')
+    root.style.setProperty('--click-x', `${x}px`)
+    root.style.setProperty('--click-y', `${y}px`)
+    root.style.setProperty('--end-radius', `${endRadius}px`)
+
+    const transition = document.startViewTransition(async () => {
+      // 核心：这里一定要执行改变状态，从而触发 next-themes 修改 html 的 class
+      setTheme(nextTheme)
+    })
+
+    transition.finished.finally(() => {
+      root.classList.remove('theme-transition')
+    })
+  }
+
   useEffect(() => setMounted(true), [])
 
   return (
@@ -79,54 +112,56 @@ const ThemeSwitch = () => {
           leaveTo="transform opacity-0 scale-95"
         >
           <MenuItems className="ring-opacity-5 absolute right-0 z-50 mt-2 w-32 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black focus:outline-hidden dark:bg-gray-800">
-            <RadioGroup value={theme} onChange={setTheme}>
+            {/* 3. 修复：RadioGroup 只负责绑定 value，不要在它的 onChange 里传事件 */}
+            <RadioGroup value={theme}>
               <div className="p-1">
+
+                {/* Light 选项 */}
                 <Radio value="light">
                   <MenuItem>
                     {({ focus }) => (
                       <button
-                        className={`${focus ? 'bg-primary-600 text-white' : ''} group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                        // 4. 修复：直接在 button 的 onClick 上捕获准确的点击坐标
+                        onClick={(e) => handleThemeChange('light', e)}
+                        className={`${focus ? 'bg-primary-600 text-white' : 'text-gray-900 dark:text-gray-100'} group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                       >
-                        <div className="mr-2">
-                          <Sun />
-                        </div>
+                        <div className="mr-2"><Sun /></div>
                         Light
                       </button>
                     )}
                   </MenuItem>
                 </Radio>
+
+                {/* Dark 选项 */}
                 <Radio value="dark">
                   <MenuItem>
                     {({ focus }) => (
                       <button
-                        className={`${
-                          focus ? 'bg-primary-600 text-white' : ''
-                        } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                        onClick={(e) => handleThemeChange('dark', e)}
+                        className={`${focus ? 'bg-primary-600 text-white' : 'text-gray-900 dark:text-gray-100'} group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                       >
-                        <div className="mr-2">
-                          <Moon />
-                        </div>
+                        <div className="mr-2"><Moon /></div>
                         Dark
                       </button>
                     )}
                   </MenuItem>
                 </Radio>
+
+                {/* System 选项 */}
                 <Radio value="system">
                   <MenuItem>
                     {({ focus }) => (
                       <button
-                        className={`${
-                          focus ? 'bg-primary-600 text-white' : ''
-                        } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                        onClick={(e) => handleThemeChange('system', e)}
+                        className={`${focus ? 'bg-primary-600 text-white' : 'text-gray-900 dark:text-gray-100'} group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                       >
-                        <div className="mr-2">
-                          <Monitor />
-                        </div>
+                        <div className="mr-2"><Monitor /></div>
                         System
                       </button>
                     )}
                   </MenuItem>
                 </Radio>
+
               </div>
             </RadioGroup>
           </MenuItems>
