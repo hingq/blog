@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { GetObjectCommand, PutObjectCommand, S3Client } from '../lib/s3-client.mjs'
 import nextEnv from '@next/env'
 import {
   compileLocalBlogPosts,

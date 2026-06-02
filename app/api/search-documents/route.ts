@@ -1,4 +1,4 @@
-import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { GetObjectCommand } from '@/lib/s3-client.mjs'
 import { NextResponse } from 'next/server'
 import {
   createMinioClient,

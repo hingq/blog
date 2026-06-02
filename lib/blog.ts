@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { GetObjectCommand, S3Client } from '@/lib/s3-client.mjs'
 import { slug } from 'github-slugger'
 import { extractTocHeadings } from 'pliny/mdx-plugins/index.js'
 import {

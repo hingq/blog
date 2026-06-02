@@ -1,4 +1,4 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { GetObjectCommand, S3Client } from '../lib/s3-client.mjs'
 import { compile } from '@mdx-js/mdx'
 import { fromHtmlIsomorphic } from 'hast-util-from-html-isomorphic'
 import matter from 'gray-matter'
