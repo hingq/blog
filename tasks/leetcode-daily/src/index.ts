@@ -71,8 +71,8 @@ export async function runLeetcodeDaily() {
 
   // Step 3 — 写入博客
   log.step(3, TOTAL_STEPS, icon.file, '写入本地博客文件')
-  const outputPath = await log.timed(() => {
-    const filePath = writeBlogPost(root, daily, solution)
+  const outputPath = await log.timed(async () => {
+    const filePath = await writeBlogPost(root, daily, solution)
     log.success('文件已保存')
     log.detail(filePath)
     return filePath

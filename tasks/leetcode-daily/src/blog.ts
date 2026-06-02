@@ -1,23 +1,58 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { unified } from 'unified'
+import rehypeParse from 'rehype-parse'
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
+import rehypeStringify from 'rehype-stringify'
 import type { DailyQuestion } from './types'
 
-export function writeBlogPost(projectRoot: string, daily: DailyQuestion, solution: string): string {
+export async function writeBlogPost(
+  projectRoot: string,
+  daily: DailyQuestion,
+  solution: string
+): Promise<string> {
   const outputDir = path.join(projectRoot, 'data', 'blog')
   fs.mkdirSync(outputDir, { recursive: true })
   const outputPath = path.join(outputDir, `leetcode-${daily.question.titleSlug}.mdx`)
-  fs.writeFileSync(outputPath, renderBlogPost(daily, solution))
+  fs.writeFileSync(outputPath, await renderBlogPost(daily, solution))
   return outputPath
 }
 
-export function renderBlogPost(daily: DailyQuestion, solution: string): string {
+export async function renderBlogPost(daily: DailyQuestion, solution: string): Promise<string> {
   const frontmatter = `---\ntitle: 'LeetCode: ${daily.question.title}'\ndate: '${daily.date}'\ntags: ['LeetCode', '算法']\ndraft: false\nsummary: '自动生成的 LeetCode 每日一题题解'\n---\n\n`
-  return `${frontmatter}## 原文链接\n\n[${daily.question.title}](https://leetcode.cn${daily.link})\n\n## 题目描述\n\n${formatLeetcodeContent(daily.question.content)}\n\n## 题解分析\n\n${normalizeSolutionMarkdown(solution)}`
+  const body = `${frontmatter}## 原文链接\n\n[${daily.question.title}](https://leetcode.cn${daily.link})\n\n## 题目描述\n\n${await formatLeetcodeContent(daily.question.content)}\n\n## 题解分析\n\n${normalizeSolutionMarkdown(solution)}`
+  // 整篇写入前兜底：剥离任何残留 HTML 标签（含 LLM 题解里混入的），避免 MDX 编译崩溃。
+  return stripStrayHtmlTags(body)
 }
 
-export function formatLeetcodeContent(content: string): string {
+/**
+ * Whitelist exactly the tags the regex converter below understands. Everything
+ * else is dropped by rehype-sanitize while its text content is preserved, so no
+ * unknown HTML can leak into the `.mdx` and break MDX compilation.
+ */
+const sanitizeSchema = {
+  ...defaultSchema,
+  tagNames: ['p', 'ul', 'ol', 'li', 'pre', 'code', 'strong', 'em', 'sup', 'br', 'img'],
+  attributes: {
+    img: ['src', 'alt'],
+  },
+}
+
+/** Parse → sanitize (drop unknown tags, keep text) → serialize back to HTML. */
+async function sanitizeHtml(html: string): Promise<string> {
+  const file = await unified()
+    .use(rehypeParse, { fragment: true })
+    .use(rehypeSanitize, sanitizeSchema)
+    // useNamedReferences keeps &lt; &gt; &amp; &nbsp; so the decoder below matches.
+    .use(rehypeStringify, { characterReferences: { useNamedReferences: true } })
+    .process(html)
+  return String(file)
+}
+
+export async function formatLeetcodeContent(content: string): Promise<string> {
+  const sanitized = await sanitizeHtml(content)
   let output = stripHtmlAttribute(
-    stripHtmlAttribute(content.replace(/&nbsp;/g, ' '), 'class'),
+    stripHtmlAttribute(sanitized.replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' '), 'class'),
     'style'
   )
   output = output.replace(
@@ -45,11 +80,15 @@ export function formatLeetcodeContent(content: string): string {
 
 /** Languages to keep in solution code blocks (case-insensitive match). */
 const ALLOWED_LANGUAGES = new Set([
-  'javascript', 'js',
-  'typescript', 'ts',
+  'javascript',
+  'js',
+  'typescript',
+  'ts',
   'rust',
-  'go', 'golang',
-  'cpp', 'c++',
+  'go',
+  'golang',
+  'cpp',
+  'c++',
   'text',
 ])
 
@@ -156,6 +195,28 @@ function decodeHtmlEntities(content: string): string {
 
 function stripHtmlAttribute(content: string, attrName: string): string {
   return content.replace(new RegExp(`\\s${attrName}\\s*=\\s*("[^"]*"|'[^']*')`, 'gi'), '')
+}
+
+/**
+ * Final guard before write: strip any residual HTML tag that MDX would try to
+ * parse as JSX. Code fences are skipped so language generics like `vector<int>`
+ * survive, and the intentional `<Image .../>` JSX is whitelisted. The pattern
+ * only matches real tags (`<` followed by a letter), so `<=` / `>=` and `< 5`
+ * are left untouched.
+ */
+function stripStrayHtmlTags(content: string): string {
+  let inFence = false
+  return content
+    .split(/\r?\n/)
+    .map((line) => {
+      if (line.trim().startsWith('```')) {
+        inFence = !inFence
+        return line
+      }
+      if (inFence) return line
+      return line.replace(/<\/?(?!Image\b)[A-Za-z][\w-]*(?:\s[^>]*?)?\/?>/g, '')
+    })
+    .join('\n')
 }
 
 function collapseBlankLines(content: string): string {

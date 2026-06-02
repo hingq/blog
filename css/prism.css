@@ -17,6 +17,12 @@
 }
 
 /* Code block styles */
+/* Reserve top padding so the floating copy button / language label
+   (positioned at top-2, ~2.5rem tall) never overlaps the first code line. */
+.prose pre {
+  @apply pt-12;
+}
+
 .code-highlight {
   @apply float-left min-w-full;
 }
