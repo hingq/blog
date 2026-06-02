@@ -270,11 +270,12 @@ const loadPostIndex = cache(async (): Promise<CoreBlogPost[]> => {
     logBlogSource('using public blog index source')
     result = await fetchIndexFromPublicUrl()
   } else {
-    const error = new Error(
-      'Blog source is not configured. Set MinIO runtime env vars or BLOG_INDEX_URL.'
-    )
-    warnBlogSource('missing blog source configuration', error)
-    throw error
+    // 未配置任何数据源（典型为构建阶段，运行时环境变量尚未注入）：
+    // 优雅降级为空索引，避免预渲染崩溃。运行时若配置了源但拉取失败，
+    // 仍走上面的 minio/remote 分支抛错，不在此掩盖真实故障。
+    // 注意：不写入 indexCache，避免把空数组缓存住。
+    warnBlogSource('no blog source configured, returning empty index', new Error('local source'))
+    return []
   }
 
   indexCache.set(result)
