@@ -250,6 +250,13 @@ export function clearBlogCache(): void {
   postCache.clear()
 }
 
+export function clearBlogPostCache(postSlug: string): void {
+  logBlogSource(`clearing blog cache for post "${postSlug}"`)
+  postCache.delete(postSlug)
+  // 索引/相邻文章可能随该文章变化而改变，一并清除。
+  indexCache.clear()
+}
+
 const loadPostIndex = cache(async (): Promise<CoreBlogPost[]> => {
   const cached = indexCache.get()
   if (cached) {

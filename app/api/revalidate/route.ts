@@ -1,6 +1,6 @@
 import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
-import { clearBlogCache } from '@/lib/blog'
+import { clearBlogCache, clearBlogPostCache } from '@/lib/blog'
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -18,6 +18,23 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    let slug: string | undefined
+    try {
+      const body = await request.json()
+      if (body && typeof body.slug === 'string' && body.slug.length > 0) {
+        slug = body.slug
+      }
+    } catch {
+      // 无 body 或非 JSON：走全量清除兜底
+    }
+
+    if (slug) {
+      // 精确清除单篇文章的页面缓存与数据缓存，其余页面不受影响
+      clearBlogPostCache(slug)
+      revalidatePath(`/blog/${slug}`)
+      return NextResponse.json({ revalidated: true, slug, now: Date.now() })
+    }
+
     clearBlogCache()
     // 重新验证整个 App Router 的路由树缓存
     revalidatePath('/', 'layout')

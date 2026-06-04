@@ -9,12 +9,20 @@ import PostBanner from '@/layouts/PostBanner'
 import { Metadata } from 'next'
 import siteMetadata from '@/data/siteMetadata'
 import { notFound } from 'next/navigation'
-import { getAdjacentPosts, getPostBySlug } from '@/lib/blog'
+import { getAdjacentPosts, getAllPosts, getPostBySlug } from '@/lib/blog'
 import { getAuthorsBySlugs } from '@/lib/authors'
 import { Suspense } from 'react'
 import Loading from '@/components/loading'
 const defaultLayout = 'PostLayout'
-export const revalidate = 600
+// 永久缓存：渲染结果进入 Next.js 全路由缓存，不走时间驱动刷新。
+export const revalidate = false
+// 未预渲染的 slug 走按需 SSR 兜底并回填缓存，而非 404。
+export const dynamicParams = true
+
+export async function generateStaticParams(): Promise<{ slug: string[] }[]> {
+  const posts = await getAllPosts()
+  return posts.map((post) => ({ slug: post.slug.split('/') }))
+}
 const layouts = {
   PostSimple,
   PostLayout,
