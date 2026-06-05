@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { GetObjectCommand, PutObjectCommand, S3Client } from '../lib/s3-client.mjs'
 import nextEnv from '@next/env'
+import siteMetadata from '../data/siteMetadata.js'
 import {
   compileLocalBlogPosts,
   compileSingleBlogPost,
@@ -178,6 +179,44 @@ async function loadRemoteJson(client, bucket, key) {
 }
 
 // ---------------------------------------------------------------------------
+// Revalidate: 通知运行中的站点刷新被永久缓存的页面
+// ---------------------------------------------------------------------------
+function resolveRevalidateTarget() {
+  const token = process.env.REVALIDATE_TOKEN
+  if (!token) {
+    logSkip('REVALIDATE_TOKEN 未配置，跳过页面缓存刷新')
+    return null
+  }
+  const base = (process.env.REVALIDATE_URL || `${siteMetadata.siteUrl}/api/revalidate`).replace(
+    /\/$/,
+    ''
+  )
+  return { url: base, token }
+}
+
+// 单次刷新调用：失败仅告警，不影响发布（内容已上传，刷新为尽力而为）。
+async function callRevalidate(target, slug) {
+  const label = slug ? `slug=${slug}` : '整体刷新'
+  try {
+    const response = await fetch(target.url, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${target.token}`,
+      },
+      body: JSON.stringify(slug ? { slug } : {}),
+    })
+    if (!response.ok) {
+      throw new Error(`${response.status} ${response.statusText}`)
+    }
+    logSuccess(`revalidate 成功（${label}）`)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.log(`  ${_i.error} ${_c.yellow(`revalidate 失败（${label}）：${message}`)}`)
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Single-file publish mode
 // ---------------------------------------------------------------------------
 async function mainSingle(filePath) {
@@ -229,6 +268,10 @@ async function mainSingle(filePath) {
   const searchDoc = toSearchDocument(post)
 
   const existingIndexIdx = existingIndex.findIndex((p) => p.slug === post.slug)
+  const previousCore = existingIndexIdx >= 0 ? existingIndex[existingIndexIdx] : null
+  // 核心字段（标题/日期/摘要/标签等）变化会影响列表页/首页/标签页，需整体刷新；
+  // 仅正文变化则按 slug 精确刷新即可。
+  const coreChanged = !previousCore || JSON.stringify(previousCore) !== JSON.stringify(coreContent)
   if (existingIndexIdx >= 0) {
     existingIndex[existingIndexIdx] = coreContent
     logInfo('Updated existing entry in blog index')
@@ -289,6 +332,17 @@ async function mainSingle(filePath) {
     }
     await uploadJson(client, bucket, manifestKey, newManifest)
     logSuccess(`Manifest saved: ${bucket}/${manifestKey}`)
+
+    // 刷新站点页面缓存
+    const target = resolveRevalidateTarget()
+    if (target) {
+      logStep('Revalidating site page cache')
+      if (coreChanged) {
+        await callRevalidate(target)
+      } else {
+        await callRevalidate(target, post.slug)
+      }
+    }
   } else {
     logInfo(`${_c.yellow('Dry run complete')}, no files uploaded`)
   }
@@ -333,6 +387,7 @@ async function mainFull() {
   logStep('Checking individual posts')
   let uploadedCount = 0
   let skippedCount = 0
+  const changedSlugs = []
 
   for (const post of publishedPosts) {
     const postJson = JSON.stringify(post)
@@ -354,6 +409,7 @@ async function mainFull() {
       await uploadJson(client, bucket, postKey, post)
       logUpload(`uploaded: ${bucket}/${postKey}`)
     }
+    changedSlugs.push(post.slug)
     uploadedCount++
   }
 
@@ -401,6 +457,22 @@ async function mainFull() {
     }
     await uploadJson(client, bucket, manifestKey, newManifest)
     logSuccess(`Manifest saved: ${bucket}/${manifestKey}`)
+
+    // 刷新站点页面缓存
+    const target = resolveRevalidateTarget()
+    if (target && changedSlugs.length > 0) {
+      logStep('Revalidating site page cache')
+      // 索引变化（新增文章或核心字段改动）会影响列表/首页/标签页，整体刷新一次；
+      // 否则仅正文变动，按改动的 slug 精确刷新，保留其余文章缓存。
+      const indexChanged = manifest?.indexHash !== indexHash
+      if (indexChanged) {
+        await callRevalidate(target)
+      } else {
+        for (const slug of changedSlugs) {
+          await callRevalidate(target, slug)
+        }
+      }
+    }
   } else {
     logInfo(`${_c.yellow('Dry run complete')}, no files uploaded`)
   }

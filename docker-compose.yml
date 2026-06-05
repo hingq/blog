@@ -30,3 +30,4 @@ services:
       MINIO_SEARCH_INDEX_KEY: search.json
       MINIO_PUBLIC_BASE_URL: ''
       MINIO_FORCE_PATH_STYLE: 'true'
+      REVALIDATE_TOKEN: blog-revalidate-token
