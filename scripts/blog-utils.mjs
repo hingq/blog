@@ -17,7 +17,6 @@ import {
   remarkImgToJsx,
 } from 'pliny/mdx-plugins/index.js'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
-import rehypeCitation from 'rehype-citation'
 import rehypeKatex from 'rehype-katex'
 import rehypeKatexNoTranslate from 'rehype-katex-notranslate'
 import rehypePrismPlus from 'rehype-prism-plus'
@@ -151,7 +150,6 @@ async function compileMdx(source) {
         ],
         rehypeKatex,
         rehypeKatexNoTranslate,
-        [rehypeCitation, { path: path.join(projectRoot, 'data') }],
         [rehypePrismPlus, { defaultLanguage: 'js', ignoreMissing: true }],
       ],
     })
