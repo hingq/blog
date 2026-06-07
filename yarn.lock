@@ -8374,6 +8374,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jsmind@npm:^0.8.4":
+  version: 0.8.8
+  resolution: "jsmind@npm:0.8.8"
+  checksum: f073e7d9aed1403769c7a5d09858c48bf66ff7d52ea7c3d9d623f1d26879c557725cb05561acf4d12fc7adea92b288bb3651f9f81e4b9d88f545fd5a7c941a5d
+  languageName: node
+  linkType: hard
+
 "json-buffer@npm:3.0.1":
   version: 3.0.1
   resolution: "json-buffer@npm:3.0.1"
@@ -12433,6 +12440,7 @@ __metadata:
     hast-util-from-html-isomorphic: ^2.0.0
     husky: ^9.1.7
     image-size: 2.0.2
+    jsmind: ^0.8.4
     lint-staged: ^16.2.7
     next: ^15.5.16
     next-themes: ^0.4.6
