@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Transformer } from 'markmap-lib'
 import { Markmap } from 'markmap-view'
+import Link from '@/components/Link'
 import Upload from './Upload'
 
 // markmap-lib 内部基于 remark 解析 Markdown，复用成熟管线，无需自造解析器
@@ -76,48 +77,44 @@ export default function Mindmap() {
   }
 
   return (
-    <div className="space-y-4">
-      <div
-        ref={cardRef}
-        className={`flex flex-col gap-3 bg-white dark:bg-gray-950 ${
-          isFullscreen
-            ? 'h-screen w-screen p-4'
-            : 'relative left-1/2 w-screen -translate-x-1/2 border-y-2 border-gray-200/60 p-4 sm:px-6 xl:px-8 dark:border-gray-700/60'
-        }`}
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className={buttonClass} onClick={() => setShowUpload(true)}>
-            上传 Markdown
-          </button>
-          <button type="button" className={buttonClass} onClick={handleClear} disabled={!hasData}>
-            清空
-          </button>
-          <button type="button" className={buttonClass} onClick={toggleFullscreen}>
-            {isFullscreen ? '退出全屏' : '全屏'}
-          </button>
-        </div>
-
-        <div
-          className={`relative w-full overflow-hidden rounded-md bg-gray-50 dark:bg-gray-900 ${
-            isFullscreen ? 'flex-1' : 'h-[78vh]'
-          }`}
+    <div ref={cardRef} className="fixed inset-0 z-40 flex flex-col bg-white dark:bg-gray-950">
+      <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+        <Link
+          href="/"
+          className="hover:text-primary-600 dark:hover:text-primary-400 mr-1 inline-flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300"
         >
-          <svg ref={svgRef} className="h-full w-full" />
-          {!hasData && (
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
-              <p className="text-gray-500 dark:text-gray-400">
-                上传一个 Markdown 文件，自动生成思维导图
-              </p>
-              <button
-                type="button"
-                className={`${buttonClass} pointer-events-auto`}
-                onClick={() => setShowUpload(true)}
-              >
-                选择文件
-              </button>
-            </div>
-          )}
-        </div>
+          <span aria-hidden="true">←</span> 返回
+        </Link>
+        <span className="mr-auto text-sm font-semibold text-gray-900 dark:text-gray-100">
+          思维导图
+        </span>
+        <button type="button" className={buttonClass} onClick={() => setShowUpload(true)}>
+          上传 Markdown
+        </button>
+        <button type="button" className={buttonClass} onClick={handleClear} disabled={!hasData}>
+          清空
+        </button>
+        <button type="button" className={buttonClass} onClick={toggleFullscreen}>
+          {isFullscreen ? '退出全屏' : '全屏'}
+        </button>
+      </div>
+
+      <div className="relative flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900">
+        <svg ref={svgRef} className="h-full w-full" />
+        {!hasData && (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+            <p className="text-gray-500 dark:text-gray-400">
+              上传一个 Markdown 文件，自动生成思维导图
+            </p>
+            <button
+              type="button"
+              className={`${buttonClass} pointer-events-auto`}
+              onClick={() => setShowUpload(true)}
+            >
+              选择文件
+            </button>
+          </div>
+        )}
       </div>
 
       {showUpload && <Upload onFile={handleFile} onClose={() => setShowUpload(false)} />}

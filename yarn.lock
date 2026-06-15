@@ -1399,7 +1399,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/runtime@npm:^7.22.6":
+"@babel/runtime@npm:^7.21.5, @babel/runtime@npm:^7.22.6":
   version: 7.29.7
   resolution: "@babel/runtime@npm:7.29.7"
   checksum: bc311855c6dbf5356030979584ca0f8b6cee39fe058175b02e85a73e246fc76ae30248b0d40e70c2652101faeb43279468ed2d086a670673eb9783c1fee1df2b
@@ -2326,6 +2326,15 @@ __metadata:
   version: 0.2.10
   resolution: "@floating-ui/utils@npm:0.2.10"
   checksum: ffc4c24a46a665cfd0337e9aaf7de8415b572f8a0f323af39175e4b575582aed13d172e7f049eedeece9eaf022bad019c140a2d192580451984ae529bdf1285c
+  languageName: node
+  linkType: hard
+
+"@gera2ld/jsx-dom@npm:^2.2.2":
+  version: 2.2.2
+  resolution: "@gera2ld/jsx-dom@npm:2.2.2"
+  dependencies:
+    "@babel/runtime": ^7.21.5
+  checksum: 02057621274d9466957a785be9179b5b9f5d4b17b5322c2ca2094f7b29c9a107cd5caddee1fc9d79f5001c342a149d1e4cdcbdfac31120522123b87a5a3d5933
   languageName: node
   linkType: hard
 
@@ -9310,6 +9319,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"markmap-common@npm:0.18.9":
+  version: 0.18.9
+  resolution: "markmap-common@npm:0.18.9"
+  dependencies:
+    "@babel/runtime": ^7.22.6
+    "@gera2ld/jsx-dom": ^2.2.2
+    npm2url: ^0.2.4
+  checksum: 7800ba42bf57e7ea379fb7750abd4a93cc0cc39af047c8af12b8082fc778080f8ede7ed1c8585ee7b7b3e954b2c58c3b65d67d9622e57681973355bafa1f08bd
+  languageName: node
+  linkType: hard
+
 "markmap-html-parser@npm:0.18.11":
   version: 0.18.11
   resolution: "markmap-html-parser@npm:0.18.11"
@@ -10619,6 +10639,13 @@ __metadata:
   version: 3.0.0
   resolution: "normalize-path@npm:3.0.0"
   checksum: 88eeb4da891e10b1318c4b2476b6e2ecbeb5ff97d946815ffea7794c31a89017c70d7f34b3c2ebf23ef4e9fc9fb99f7dffe36da22011b5b5c6ffa34f4873ec20
+  languageName: node
+  linkType: hard
+
+"npm2url@npm:^0.2.4":
+  version: 0.2.4
+  resolution: "npm2url@npm:0.2.4"
+  checksum: e510693efb635261e050fce9512cacfc6c631c524cac5d06b872517e8da8e47c15c3697b1583007aedac287bb26b09843f83ee9dfd10ca8d5b91b755ed9ce4ff
   languageName: node
   linkType: hard
 
@@ -13011,6 +13038,7 @@ __metadata:
     husky: ^9.1.7
     image-size: 2.0.2
     lint-staged: ^16.2.7
+    markmap-common: 0.18.9
     markmap-lib: ^0.18.12
     markmap-view: ^0.18.12
     next: ^15.5.16
