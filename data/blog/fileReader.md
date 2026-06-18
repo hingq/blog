@@ -3,7 +3,7 @@ title: 'FileReader 与 URL.createObjectURL：前端文件读取的四种方式'
 date: '2026-06-10'
 tags: ['前端基础', 'JavaScript', '文件处理']
 draft: false
-summary: '前端拿到 File 或 Blob 后，常用的读取转化只有四条路：readAsText、readAsDataURL、readAsArrayBuffer 和 URL.createObjectURL。这篇文章梳理它们的返回类型、内存代价和适用场景，帮你快速判断该用哪一个。'
+summary: '前端拿到 File 或 Blob 后，常用的读取转化只有四条路：readAsText、readAsDataURL、readAsArrayBuffer 和 URL.createObjectURL。'
 ---
 
 # FileReader 与 URL.createObjectURL
