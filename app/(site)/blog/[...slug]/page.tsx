@@ -11,8 +11,6 @@ import siteMetadata from '@/data/siteMetadata'
 import { notFound } from 'next/navigation'
 import { getAdjacentPosts, getAllPosts, getPostBySlug } from '@/lib/blog'
 import { getAuthorsBySlugs } from '@/lib/authors'
-import { Suspense } from 'react'
-import Loading from '@/components/loading'
 const defaultLayout = 'PostLayout'
 // 永久缓存：渲染结果进入 Next.js 全路由缓存，不走时间驱动刷新。
 export const revalidate = false
@@ -99,6 +97,11 @@ export default async function Page(props: { params: Promise<{ slug: string[] }> 
     }
   })
 
+  const code = post.body.code
+  if (!code) {
+    return notFound()
+  }
+
   const Layout = layouts[post.layout || defaultLayout]
 
   return (
@@ -113,7 +116,7 @@ export default async function Page(props: { params: Promise<{ slug: string[] }> 
         next={adjacent.next}
         prev={adjacent.prev}
       >
-        <MDXRenderer code={post.body.code} components={components} toc={post.toc} />
+        <MDXRenderer code={code} components={components} toc={post.toc} />
       </Layout>
     </>
   )

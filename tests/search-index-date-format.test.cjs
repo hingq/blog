@@ -11,7 +11,7 @@ test('toSearchDocument normalizes date to YYYY-MM-DD without mutating the source
     slug: 'example',
     summary: 'Summary',
     body: {
-      code: 'return null',
+      raw: '# Example',
     },
   }
 

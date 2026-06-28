@@ -65,8 +65,7 @@ async function buildPublishScripts() {
   await fs.writeFile(path.join(scriptBundleRoot, 'package.json'), '{\n  "type": "module"\n}\n')
   return esbuild.build({
     ...shared,
-    // 仅对脚本打包开启 code splitting：publish-content 与 blog-utils 共享同一份
-    // 依赖图（含 MDX 编译管线），抽到 chunks/ 只打包一次，避免重复内联。
+    // publish-content 与 blog-utils 共享 S3 客户端等依赖，抽到 chunks/ 避免重复内联。
     splitting: true,
     entryPoints: ['scripts/publish-content.mjs', 'scripts/blog-utils.mjs'],
     outdir: scriptBundleRoot,

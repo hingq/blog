@@ -2,6 +2,7 @@ import { cache } from 'react'
 import { GetObjectCommand, S3Client } from '@/lib/s3-client.mjs'
 import { slug } from 'github-slugger'
 import { extractTocHeadings } from 'pliny/mdx-plugins/index.js'
+import { compileMdx } from '@/lib/compile-mdx.mjs'
 import {
   createMinioClient as createSharedMinioClient,
   getRuntimeContentSource,
@@ -9,7 +10,7 @@ import {
 } from '@/lib/runtime-content-source.mjs'
 
 export interface BlogPostBody {
-  code: string
+  code?: string
   raw?: string
 }
 
@@ -101,8 +102,11 @@ function assertBlogPost(post: unknown, index: number): asserts post is BlogPost 
   assertCorePost(post, index)
 
   const candidate = post as Partial<BlogPost>
-  if (!candidate.body || typeof candidate.body.code !== 'string') {
-    throw new Error(`Invalid blog post at index ${index}: missing body.code`)
+  if (
+    !candidate.body ||
+    (typeof candidate.body.code !== 'string' && typeof candidate.body.raw !== 'string')
+  ) {
+    throw new Error(`Invalid blog post at index ${index}: missing body.code or body.raw`)
   }
 }
 
@@ -199,7 +203,7 @@ async function fetchPostFromMinio(postSlug: string): Promise<BlogPost> {
   const raw = await response.Body.transformToString()
   const post = JSON.parse(raw)
   assertBlogPost(post, 0)
-  return normalizePostToc(post)
+  return post
 }
 
 async function fetchPostFromPublicUrl(postSlug: string): Promise<BlogPost> {
@@ -220,16 +224,26 @@ async function fetchPostFromPublicUrl(postSlug: string): Promise<BlogPost> {
 
   const post = await response.json()
   assertBlogPost(post, 0)
-  return normalizePostToc(post)
+  return post
 }
 
 import { createTtlCache } from '@/lib/cache'
 
 const INDEX_CACHE_TTL = 600_000 // 10 minutes
 const POST_CACHE_TTL = 600_000 // 10 minutes
+const MAX_POST_CACHE_SIZE = 500
 
 const indexCache = createTtlCache<CoreBlogPost[]>(INDEX_CACHE_TTL)
 const postCache = new Map<string, { data: BlogPost; expiresAt: number }>()
+
+function sweepExpiredPosts(): void {
+  const now = Date.now()
+  for (const [key, entry] of postCache) {
+    if (now >= entry.expiresAt) {
+      postCache.delete(key)
+    }
+  }
+}
 
 function getCachedPost(postSlug: string): BlogPost | null {
   const entry = postCache.get(postSlug)
@@ -241,6 +255,10 @@ function getCachedPost(postSlug: string): BlogPost | null {
 }
 
 function setCachedPost(postSlug: string, data: BlogPost): void {
+  // Periodically sweep expired entries to prevent unbounded map growth
+  if (postCache.size >= MAX_POST_CACHE_SIZE) {
+    sweepExpiredPosts()
+  }
   postCache.set(postSlug, { data, expiresAt: Date.now() + POST_CACHE_TTL })
 }
 
@@ -311,6 +329,16 @@ const loadPostBySlug = cache(async (postSlug: string): Promise<BlogPost | undefi
       warnBlogSource('missing post source configuration', error)
       throw error
     }
+
+    // Compile MDX from raw markdown if body.code is not present.
+    // Old posts already have body.code; new posts only have body.raw.
+    if (!result.body.code && typeof result.body.raw === 'string') {
+      logBlogSource(`compiling MDX for post "${postSlug}" from raw markdown`)
+      const code = await compileMdx(result.body.raw)
+      result = { ...result, body: { ...result.body, code } }
+    }
+
+    result = await normalizePostToc(result)
 
     setCachedPost(postSlug, result)
     return result
