@@ -1,0 +1,50 @@
+---
+title: 'gRPC'
+date: '2026-06-18'
+tags: ['test']
+draft: false
+summary: 'test'
+---
+
+### 简单 RPC
+
+`routeGuideServer` 实现了我们所有的服务方法。首先让我们看看最简单的类型 `GetFeature`，它从客户端拿到一个 `Point` 对象，然后从返回包含从数据库拿到的feature信息的 `Feature`.
+
+```go
+func (s *routeGuideServer) GetFeature(ctx context.Context, point *pb.Point) (*pb.Feature, error) {
+    for _, feature := range s.savedFeatures {
+        if proto.Equal(feature.Location, point) {
+            return feature, nil
+        }
+    }
+    // No feature was found, return an unnamed feature
+    return &pb.Feature{"", point}, nil
+}
+```
+
+```js
+function checkFeature(point) {
+  var feature
+  // Check if there is already a feature object for the given point
+  for (var i = 0; i < feature_list.length; i++) {
+    feature = feature_list[i]
+    if (
+      feature.location.latitude === point.latitude &&
+      feature.location.longitude === point.longitude
+    ) {
+      return feature
+    }
+  }
+  var name = ''
+  feature = {
+    name: name,
+    location: point,
+  }
+  return feature
+}
+function getFeature(call, callback) {
+  callback(null, checkFeature(call.request))
+}
+```
+
+该方法传入了 RPC 的上下文对象，以及客户端的 `Point` protocol buffer请求。它返回了一个包含响应信息和`error` 的 `Feature` protocol buffer对象。在方法中我们用适当的信息填充 `Feature`，然后将其和一个`nil`错误一起返回，告诉 gRPC 我们完成了对 RPC 的处理，并且 `Feature` 可以返回给客户端。

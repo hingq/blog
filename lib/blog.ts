@@ -49,14 +49,9 @@ const BLOG_POSTS_BASE_URL = process.env.BLOG_POSTS_BASE_URL
 const REVALIDATE_SECONDS = 60
 const isProduction = process.env.NODE_ENV === 'production'
 const isDevelopment = process.env.NODE_ENV !== 'production'
-const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT
-const MINIO_REGION = process.env.MINIO_REGION || 'us-east-1'
 const MINIO_BUCKET = process.env.MINIO_BUCKET
 const MINIO_BLOG_INDEX_KEY = process.env.MINIO_BLOG_INDEX_KEY
 const MINIO_POSTS_PREFIX = process.env.MINIO_POSTS_PREFIX ?? 'posts/'
-const MINIO_ACCESS_KEY_ID = process.env.MINIO_ACCESS_KEY_ID
-const MINIO_SECRET_ACCESS_KEY = process.env.MINIO_SECRET_ACCESS_KEY
-const MINIO_FORCE_PATH_STYLE = process.env.MINIO_FORCE_PATH_STYLE !== 'false'
 
 function logBlogSource(message: string, ...args: unknown[]) {
   if (isDevelopment) {
@@ -161,7 +156,6 @@ async function fetchIndexFromMinio(): Promise<CoreBlogPost[]> {
   if (!Array.isArray(payload)) {
     throw new Error('Invalid blog index payload: expected a top-level array')
   }
-
   payload.forEach((post, index) => assertCorePost(post, index))
   return payload
 }
