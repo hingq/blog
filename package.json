@@ -9,7 +9,7 @@
     "start": "next dev",
     "dev": "cross-env INIT_CWD=$PWD next dev",
     "build": "cross-env INIT_CWD=$PWD next build",
-    "publish:content": "node ./scripts/publish-content.mjs",
+    "publish:content": "node ./scripts/publish-content.mjs --dry-run",
     "worker": "node ./tasks/worker/bin/worker.mjs",
     "worker:build": "node ./tasks/build.mjs",
     "tasks:lint": "eslint tasks/**/*.ts",

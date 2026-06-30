@@ -50,7 +50,10 @@ let siteMetadataPromise
 
 function fallbackSiteMetadata() {
   const siteUrl =
-    process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || process.env.MINIO_PUBLIC_BASE_URL || ''
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.MINIO_PUBLIC_BASE_URL ||
+    ''
   return {
     siteUrl: siteUrl.replace(/\/$/, ''),
     socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,
@@ -100,8 +103,9 @@ async function compileOneFile(file, siteMetadata) {
     slug: flattenedPath.replace(/^.+?\//, ''),
     path: flattenedPath,
     filePath: sourceFilePath,
-    toc: await extractTocHeadings(content),
+    // toc: await extractTocHeadings(content),
     structuredData: {
+      // SEO
       '@context': 'https://schema.org',
       '@type': 'BlogPosting',
       headline: data.title,
@@ -118,27 +122,45 @@ async function compileOneFile(file, siteMetadata) {
     },
   }
 }
+/**
+ * @description 限制并发
+ */
+async function mapLimit(items, limit, fn) {
+  const ret = []
+  const executing = new Set()
 
+  for (const item of items) {
+    const p = Promise.resolve().then(() => fn(item))
+    ret.push(p)
+    executing.add(p)
+
+    p.finally(() => executing.delete(p))
+
+    if (executing.size >= limit) {
+      await Promise.race(executing)
+    }
+  }
+
+  return Promise.all(ret)
+}
 export async function compileLocalBlogPosts() {
   const files = await getMdxFiles(blogDir)
   const seenPaths = new Map()
   const siteMetadata = await loadSiteMetadata()
 
-  return Promise.all(
-    files.map(async (file) => {
-      const post = await compileOneFile(file, siteMetadata)
-      const duplicatePath = seenPaths.get(post.path)
+  return mapLimit(files, 8, async (file) => {
+    const post = await compileOneFile(file, siteMetadata)
 
-      if (duplicatePath) {
-        throw new Error(
-          `Duplicate blog path "${post.path}" from "${duplicatePath}" and "${post.filePath}"`
-        )
-      }
+    const duplicatePath = seenPaths.get(post.path)
+    if (duplicatePath) {
+      throw new Error(
+        `Duplicate blog path "${post.path}" from "${duplicatePath}" and "${post.filePath}"`
+      )
+    }
 
-      seenPaths.set(post.path, post.filePath)
-      return post
-    })
-  )
+    seenPaths.set(post.path, post.filePath)
+    return post
+  })
 }
 
 export async function compileSingleBlogPost(filePath) {
@@ -146,4 +168,3 @@ export async function compileSingleBlogPost(filePath) {
   const siteMetadata = await loadSiteMetadata()
   return compileOneFile(absolutePath, siteMetadata)
 }
-

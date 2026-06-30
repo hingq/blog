@@ -90,7 +90,6 @@ function logStat(message) {
   console.log(`  ${_i.stat} ${message}`)
 }
 
-
 function requiredEnv(name) {
   const value = process.env[name]
   if (!value) {
@@ -348,9 +347,6 @@ async function mainSingle(filePath) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Full publish mode (original behavior)
-// ---------------------------------------------------------------------------
 async function mainFull() {
   logStep('Compiling blog content from data/blog')
   const publishedPosts = await loadCompiledPosts()
@@ -413,7 +409,9 @@ async function mainFull() {
     uploadedCount++
   }
 
-  logStat(`Posts: ${_c.green(`${uploadedCount} uploaded`)}, ${_c.gray(`${skippedCount} unchanged`)}`)
+  logStat(
+    `Posts: ${_c.green(`${uploadedCount} uploaded`)}, ${_c.gray(`${skippedCount} unchanged`)}`
+  )
 
   // Upload lightweight index (no body)
   logStep('Checking blog index (lightweight)')
@@ -478,11 +476,9 @@ async function mainFull() {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Entry point
-// ---------------------------------------------------------------------------
 async function main() {
   if (singleFilePath) {
+    // 是否单文件
     await mainSingle(singleFilePath)
   } else {
     await mainFull()
@@ -490,6 +486,8 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(`\n${_i.error} ${_c.red('[content-publish] Failed:')} ${error instanceof Error ? error.message : error}`)
+  console.error(
+    `\n${_i.error} ${_c.red('[content-publish] Failed:')} ${error instanceof Error ? error.message : error}`
+  )
   process.exit(1)
 })
