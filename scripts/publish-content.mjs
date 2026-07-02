@@ -168,8 +168,12 @@ async function loadRemoteJson(client, bucket, key) {
     if (!response.Body) return null
     const raw = await response.Body.transformToString()
     return JSON.parse(raw)
-  } catch {
-    return null
+  } catch (error) {
+    if (error.name === 'NoSuchKey' || error.name === 'NotFound') {
+      return null
+    }
+    console.error(`\n${_i.error} ${_c.red(`Failed to load remote JSON (${key}):`)}`, error.message)
+    throw error // 抛出错误，防止网络异常时返回 null 导致索引被清空覆盖
   }
 }
 
@@ -372,6 +376,42 @@ async function mainFull() {
     logInfo('No manifest found — first publish, uploading everything')
   }
 
+  // Load existing indexes for merging
+  logStep('Loading existing indexes from MinIO')
+  const existingIndex = (await loadRemoteJson(client, bucket, blogIndexKey)) || []
+  const existingSearch = (await loadRemoteJson(client, bucket, searchIndexKey)) || []
+
+  // Merge logic
+  const mergedIndex = [...existingIndex]
+  const mergedSearch = [...existingSearch]
+
+  for (const localPost of coreIndex) {
+    const idx = mergedIndex.findIndex((p) => p.slug === localPost.slug)
+    if (idx >= 0) {
+      mergedIndex[idx] = localPost
+    } else {
+      mergedIndex.push(localPost)
+    }
+  }
+
+  for (const localSearch of searchIndex) {
+    const idx = mergedSearch.findIndex((p) => p.slug === localSearch.slug)
+    if (idx >= 0) {
+      mergedSearch[idx] = localSearch
+    } else {
+      mergedSearch.push(localSearch)
+    }
+  }
+
+  // Chronologically sort
+  const sortByDateDesc = (a, b) => {
+    if (a.date > b.date) return -1
+    if (a.date < b.date) return 1
+    return 0
+  }
+  mergedIndex.sort(sortByDateDesc)
+  mergedSearch.sort(sortByDateDesc)
+
   const oldPostHashes = manifest?.posts ?? {}
   const newPostHashes = { ...oldPostHashes }
 
@@ -411,7 +451,7 @@ async function mainFull() {
 
   // Upload lightweight index (no body)
   logStep('Checking blog index (lightweight)')
-  const indexJson = JSON.stringify(coreIndex)
+  const indexJson = JSON.stringify(mergedIndex)
   const indexHash = sha256(indexJson)
 
   if (manifest?.indexHash === indexHash) {
@@ -419,14 +459,14 @@ async function mainFull() {
   } else {
     logInfo('Blog index changed, uploading')
     if (!isDryRun) {
-      await uploadJson(client, bucket, blogIndexKey, coreIndex)
+      await uploadJson(client, bucket, blogIndexKey, mergedIndex)
       logUpload(`Blog index → ${createPublicUrl(publicBaseUrl, blogIndexKey)}`)
     }
   }
 
   // Upload search index
   logStep('Checking search index')
-  const searchJson = JSON.stringify(searchIndex)
+  const searchJson = JSON.stringify(mergedSearch)
   const searchHash = sha256(searchJson)
 
   if (manifest?.searchHash === searchHash) {
@@ -434,7 +474,7 @@ async function mainFull() {
   } else {
     logInfo('Search index changed, uploading')
     if (!isDryRun) {
-      await uploadJson(client, bucket, searchIndexKey, searchIndex)
+      await uploadJson(client, bucket, searchIndexKey, mergedSearch)
       logUpload(`Search index → ${createPublicUrl(publicBaseUrl, searchIndexKey)}`)
     }
   }
@@ -460,10 +500,10 @@ async function mainFull() {
       // 否则仅正文变动，按改动的 slug 精确刷新，保留其余文章缓存。
       const indexChanged = manifest?.indexHash !== indexHash
       if (indexChanged) {
-        // await callRevalidate(target)
+        await callRevalidate(target)
       } else {
         for (const slug of changedSlugs) {
-          // await callRevalidate(target, slug)
+          await callRevalidate(target, slug)
         }
       }
     }
