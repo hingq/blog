@@ -70,10 +70,6 @@ function logInfo(message) {
   console.log(`  ${_i.info} ${message}`)
 }
 
-function logDetail(message) {
-  console.log(`     ${_c.dim(message)}`)
-}
-
 function logSuccess(message) {
   console.log(`  ${_i.success} ${_c.green(message)}`)
 }
@@ -464,10 +460,10 @@ async function mainFull() {
       // 否则仅正文变动，按改动的 slug 精确刷新，保留其余文章缓存。
       const indexChanged = manifest?.indexHash !== indexHash
       if (indexChanged) {
-        await callRevalidate(target)
+        // await callRevalidate(target)
       } else {
         for (const slug of changedSlugs) {
-          await callRevalidate(target, slug)
+          // await callRevalidate(target, slug)
         }
       }
     }
@@ -485,9 +481,13 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(
-    `\n${_i.error} ${_c.red('[content-publish] Failed:')} ${error instanceof Error ? error.message : error}`
-  )
-  process.exit(1)
-})
+main()
+  .catch((error) => {
+    console.error(
+      `\n${_i.error} ${_c.red('[content-publish] Failed:')} ${error instanceof Error ? error.message : error}`
+    )
+    process.exit(1)
+  })
+  .finally(() => {
+    process.exit(0)
+  })
