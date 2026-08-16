@@ -93,8 +93,8 @@ test('packaged config points task args at dist tasks directory', async () => {
   assert.equal(fs.existsSync(path.join(scriptsRoot, 'blog-utils.mjs')), true)
   assert.equal(scriptsPackage.type, 'module')
   assert.ok(chunkFiles.length > 0)
-  assert.match(publishScript, /__taskCreateRequire\(import\.meta\.url\)/)
-  assert.match(publishScript, /const __dirname = __taskDirname\(__filename\)/)
+  assert.match(publishScript, /_safeCreateRequire\(import\.meta\.url\)/)
+  assert.match(publishScript, /const __dirname = _safeDirname\(__filename\)/)
   assert.doesNotMatch(publishScript, /from ['"]@aws-sdk\/client-s3['"]/)
   assert.match(publishScript, /from "\.\/chunks\/[^"]+\.mjs"/)
   assert.doesNotMatch(scriptBundleText, /uglify-js\/tools\/node\.js/)
@@ -103,7 +103,7 @@ test('packaged config points task args at dist tasks directory', async () => {
   const requireChunk = chunkFiles.find((file) => {
     const text = fs.readFileSync(path.join(chunksRoot, file), 'utf8')
     return (
-      text.includes('__taskCreateRequire(import.meta.url)') &&
+      text.includes('_safeCreateRequire(import.meta.url)') &&
       /export\s*\{[\s\S]*__require[\s\S]*\}/.test(text)
     )
   })
@@ -120,7 +120,7 @@ test('packaged config points task args at dist tasks directory', async () => {
     assert.ok(taskArg)
     assert.equal(path.dirname(taskArg), path.join(distRoot, 'tasks'))
     assert.equal(fs.existsSync(taskArg), true)
-    assert.equal(job.cwd, repoRoot)
+    assert.equal(job.cwd, '/blog/tasks')
   }
 })
 

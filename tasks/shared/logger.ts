@@ -31,6 +31,7 @@ export const icon = {
   skip: '⏭️ ',
   error: '❌',
   warning: '⚠️ ',
+  network: '🌐',
   file: '📄',
   mail: '📧',
   publish: '📤',

@@ -41,6 +41,15 @@ const packagedTaskArgs = new Map([
   ['fetch-daily-info.mjs', 'tasks/fetch-daily-info.mjs'],
 ])
 
+async function sourceEntryPoints(packageRoot) {
+  const srcRoot = path.join(packageRoot, 'src')
+  const files = await fs.readdir(srcRoot)
+  return files
+    .filter((file) => file.endsWith('.ts') && file !== 'types.ts')
+    .sort()
+    .map((file) => path.join(srcRoot, file))
+}
+
 async function writePackagedConfig(sourcePath, outputName) {
   const config = JSON.parse(await fs.readFile(sourcePath, 'utf8'))
   config.jobs = config.jobs.map((job) => ({
@@ -76,14 +85,22 @@ await fs.rm(distRoot, { recursive: true, force: true })
 await fs.rm(legacyTargetRoot, { recursive: true, force: true })
 await fs.mkdir(taskBundleRoot, { recursive: true })
 
-// Three runnable entry points; esbuild's `bundle: true` pulls in each
-// entry's imported modules, and `splitting: true` extracts shared code
-// (and the worker's dynamic imports) into `chunks/`.
-const entryPoints = {
-  worker: 'tasks/worker/src/cli.ts',
-  'tasks/leetcode-daily': 'tasks/leetcode-daily/src/index.ts',
-  'tasks/fetch-daily-info': 'tasks/fetch-daily-info/src/index.ts',
+const entryPoints = {}
+
+for (const file of await sourceEntryPoints('tasks/worker')) {
+  entryPoints[`worker-${path.basename(file, '.ts')}`] = file
 }
+entryPoints.worker = 'tasks/worker/src/cli.ts'
+
+for (const file of await sourceEntryPoints('tasks/leetcode-daily')) {
+  entryPoints[`tasks/leetcode-daily-${path.basename(file, '.ts')}`] = file
+}
+entryPoints['tasks/leetcode-daily'] = 'tasks/leetcode-daily/src/index.ts'
+
+for (const file of await sourceEntryPoints('tasks/fetch-daily-info')) {
+  entryPoints[`tasks/fetch-daily-info-${path.basename(file, '.ts')}`] = file
+}
+entryPoints['tasks/fetch-daily-info'] = 'tasks/fetch-daily-info/src/index.ts'
 
 // --- 核心修改部分 ---
 // 1. 接收 Promise.all 返回的各个任务结果
