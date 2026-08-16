@@ -26,6 +26,7 @@ export interface BlogPost {
   date: string
   tags?: string[]
   lastmod?: string
+  firstPublishedAt?: string
   draft?: boolean
   summary?: string
   images?: string[] | string
@@ -47,7 +48,6 @@ export type CoreBlogPost = Omit<BlogPost, 'body' | '_id' | '_raw'>
 const BLOG_INDEX_URL = process.env.BLOG_INDEX_URL
 const BLOG_POSTS_BASE_URL = process.env.BLOG_POSTS_BASE_URL
 const REVALIDATE_SECONDS = 60
-const isProduction = process.env.NODE_ENV === 'production'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const MINIO_BUCKET = process.env.MINIO_BUCKET
 const MINIO_BLOG_INDEX_KEY = process.env.MINIO_BLOG_INDEX_KEY
@@ -132,7 +132,7 @@ function sortPosts<T extends { date: string }>(posts: T[]) {
 }
 
 function filterDrafts<T extends { draft?: boolean }>(posts: T[]) {
-  return isProduction ? posts.filter((post) => post.draft !== true) : posts
+  return posts.filter((post) => post.draft !== true)
 }
 
 async function fetchIndexFromMinio(): Promise<CoreBlogPost[]> {
@@ -352,7 +352,8 @@ export async function getAllCorePosts(): Promise<CoreBlogPost[]> {
 }
 
 export async function getPostBySlug(postSlug: string): Promise<BlogPost | undefined> {
-  return loadPostBySlug(postSlug)
+  const post = await loadPostBySlug(postSlug)
+  return post?.draft === true ? undefined : post
 }
 
 export async function getTagCounts(): Promise<Record<string, number>> {

@@ -68,19 +68,8 @@ const ThemeSwitch = () => {
       return
     }
 
-    const x = e.clientX
-    const y = e.clientY
-
-    const endRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y)
-    )
-
     const root = document.documentElement
     root.classList.add('theme-transition')
-    root.style.setProperty('--click-x', `${x}px`)
-    root.style.setProperty('--click-y', `${y}px`)
-    root.style.setProperty('--end-radius', `${endRadius}px`)
 
     const transition = document.startViewTransition(async () => {
       // 核心：这里一定要执行改变状态，从而触发 next-themes 修改 html 的 class

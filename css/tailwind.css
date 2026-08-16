@@ -6,13 +6,13 @@
 
 /* Core theme configuration */
 @theme {
-  /* Font families */
+  /* Font families: use each platform's native system UI stack. */
   --font-sans:
     ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
     'Noto Color Emoji';
 
-  /* Colors */
-  /* Copied from https://tailwindcss.com/docs/theme#default-theme-variable-reference */
+  /* Colors
+     primary: restore the original blue scale; gray: restore the clean default neutral scale. */
   --color-primary-50: oklch(0.982 0.011 240);
   --color-primary-100: oklch(0.962 0.021 240);
   --color-primary-200: oklch(0.922 0.041 240);
@@ -36,6 +36,11 @@
   --color-gray-800: oklch(0.278 0.033 256.848);
   --color-gray-900: oklch(0.21 0.034 264.665);
   --color-gray-950: oklch(0.13 0.028 261.692);
+
+  /* Semantic tokens used by the current hero/header while keeping the blue-white theme. */
+  --color-paper: oklch(1 0 0);
+  --color-ink: oklch(0.21 0.034 264.665);
+  --color-mist: oklch(0.928 0.006 264.531);
 
   /* Line heights */
   --line-height-11: 2.75rem;
@@ -103,6 +108,13 @@
     outline: 2px solid;
     border-radius: var(--radius-sm);
     outline-color: var(--color-primary-500);
+  }
+
+  /* Dark mode semantic tokens keep the same blue-gray contrast. */
+  .dark {
+    --color-paper: oklch(0.13 0.028 261.692);
+    --color-ink: oklch(0.967 0.003 264.542);
+    --color-mist: oklch(0.278 0.033 256.848);
   }
 }
 
@@ -375,14 +387,14 @@ input:-webkit-autofill:focus {
   z-index: 1;
 }
 
-/* 3. 定义主题过渡动画的核心方程 */
+/* 3. 从页面右上角向外扩散新主题 */
 @keyframes theme-reveal {
   from {
-    clip-path: circle(0px at var(--click-x) var(--click-y));
+    clip-path: circle(0 at 100% 0);
   }
 
   to {
-    clip-path: circle(var(--end-radius) at var(--click-x) var(--click-y));
+    clip-path: circle(150vmax at 100% 0);
   }
 }
 
@@ -420,5 +432,32 @@ input:-webkit-autofill:focus {
 
   to {
     opacity: 1;
+  }
+}
+
+/* Hero blue-white wash. The animation respects reduced-motion preferences. */
+@keyframes mist-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.hero-mist {
+  background: radial-gradient(
+    120% 80% at 50% -20%,
+    color-mix(in oklch, var(--color-primary-400) 22%, transparent) 0%,
+    color-mix(in oklch, var(--color-primary-300) 10%, transparent) 28%,
+    transparent 60%
+  );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-mist {
+    animation: 14s ease-in-out infinite mist-breathe;
   }
 }

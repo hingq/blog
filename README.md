@@ -306,6 +306,19 @@ The easiest way to deploy the template is to deploy on [Vercel](https://vercel.c
 
 See [Next.js on Netlify](https://docs.netlify.com/integrations/frameworks/next-js/overview/#next-js-runtime) for suggested configuration values and more details.
 
+### Article management
+
+The private article manager is available at `/admin/posts`. It writes article JSON and indexes
+directly to MinIO and supports drafts, publishing, Markdown/MDX preview, and a recoverable recycle
+bin.
+
+Configure `ADMIN_PASSWORD` and a long random `ADMIN_SESSION_SECRET` in the runtime environment.
+The MinIO credentials must be allowed to read, write, and delete objects. Draft and recycle-bin
+objects use the `admin/` prefix by default; keep that prefix private in the MinIO bucket policy.
+The public `posts/`, blog index, and search index can retain their existing read policy.
+
+Optional object locations are documented in `.env.example` through the `MINIO_ADMIN_*` variables.
+
 ### Docker / prebuilt image deployment
 
 If you publish prebuilt images (build once, deploy many), configure both endpoint vars and CSP fallback vars at runtime:
