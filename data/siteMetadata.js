@@ -1,6 +1,6 @@
 /** @type {import('../types/comments').SiteMetadataConfig } */
 const siteMetadata = {
-  title: 'aether',
+  // title: 'aether',
   author: 'diving he',
   headerTitle: 'Aether Blog',
   description: '一川烟雨，满城风絮，梅子黄时雨',
@@ -12,8 +12,7 @@ const siteMetadata = {
   socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,
   mastodon: 'https://mastodon.social/@mastodonuser',
   email: 'amazyko@foxmail.com',
-  github: 'https://github.com',
-  x: 'https://twitter.com/x',
+  github: 'https://github.com/hingq',
   // twitter: 'https://twitter.com/Twitter',
   // facebook: 'https://facebook.com',
   // youtube: 'https://youtube.com',
@@ -61,10 +60,9 @@ const siteMetadata = {
   search: {
     provider: 'kbar', // kbar or algolia
     kbarConfig: {
-      searchDocumentsPath:
-        Boolean(process.env.EXPORT)
-          ? `${process.env.BASE_PATH || ''}/search.json`
-          : `${process.env.BASE_PATH || ''}/api/search-documents`, // 静态导出使用本地索引；非静态导出（dev/standalone）通过同源入口代理跨域索引
+      searchDocumentsPath: Boolean(process.env.EXPORT)
+        ? `${process.env.BASE_PATH || ''}/search.json`
+        : `${process.env.BASE_PATH || ''}/api/search-documents`, // 静态导出使用本地索引；非静态导出（dev/standalone）通过同源入口代理跨域索引
     },
     // provider: 'algolia',
     // algoliaConfig: {

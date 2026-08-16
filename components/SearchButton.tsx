@@ -9,7 +9,7 @@ const SEARCH_UNAVAILABLE_TEXT = '搜索暂不可用'
 
 const SearchFallback = () => (
   <div
-    className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400"
+    className="text-primary-600 dark:text-primary-400 flex items-center gap-2 text-sm"
     title={SEARCH_UNAVAILABLE_TEXT}
   >
     <svg
