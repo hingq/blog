@@ -146,7 +146,6 @@ I wanted it to be nearly as feature-rich as popular blogging templates like [bea
 - Font optimization with [next/font](https://nextjs.org/docs/app/api-reference/components/font)
 - Integration with [pliny](https://github.com/timlrx/pliny) that provides:
   - Multiple analytics options including [Umami](https://umami.is/), [Plausible](https://plausible.io/), [Simple Analytics](https://simpleanalytics.com/), Posthog and Google Analytics
-  - Comments via [Giscus](https://github.com/laymonage/giscus), [Utterances](https://github.com/utterance/utterances) or Disqus
   - Newsletter API and component with support for Mailchimp, Buttondown, Convertkit, Klaviyo, Revue, Emailoctopus and Beehiiv
   - Command palette search with [Kbar](https://github.com/timc1/kbar) or Algolia
 - Server-side syntax highlighting with line numbers and line highlighting via [rehype-prism-plus](https://github.com/timlrx/rehype-prism-plus)
@@ -181,8 +180,8 @@ npx degit 'timlrx/tailwind-nextjs-starter-blog'
 ```
 
 2. Personalize `siteMetadata.js` (site related information)
-3. Modify the content security policy in `next.config.js` if you want to use
-   other analytics provider or a commenting solution other than giscus.
+3. Modify the content security policy in `next.config.js` if you want to use another analytics
+   provider.
 4. Personalize `authors/default.md` (main author)
 5. Modify `projectsData.ts`
 6. Modify `headerNavLinks.ts` to customize navigation links

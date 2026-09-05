@@ -5,12 +5,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-yarn dev          # Start development server
-yarn build        # Production build
-yarn serve        # Serve production build locally
-yarn lint         # Lint and auto-fix (ESLint + Prettier)
-yarn analyze      # Build with bundle analysis
-yarn publish:content  # Publish content via scripts/publish-content.mjs
+yarn dev             # Start development server
+yarn build           # Production build
+yarn serve           # Serve production build locally
+yarn lint            # Lint and auto-fix (ESLint + Prettier)
+yarn analyze         # Build with bundle analysis
+yarn publish:content # Publish content via scripts/publish-content.mjs
 ```
 
 Tests are located in `/tests/` as `.test.cjs` files. There is no test runner script in package.json; tests appear to be run as part of CI.
@@ -30,6 +30,7 @@ A runtime content source (`/lib/runtime-content-source.mjs`) can fetch content f
 ### Routing & Pages
 
 All pages use Next.js App Router under `/app/`:
+
 - `/app/blog/` — dynamic blog post pages with nested slug routing
 - `/app/tags/` — tag-based archives
 - `/app/api/` — server-side API routes (search index, etc.)
@@ -38,6 +39,7 @@ All pages use Next.js App Router under `/app/`:
 ### Layouts
 
 Six layout templates in `/layouts/` are selected per-post via frontmatter (`layout` field):
+
 - `PostLayout` — two-column with sidebar metadata (default)
 - `PostSimple` — minimal single-column
 - `PostBanner` — with hero banner image
@@ -46,13 +48,14 @@ Six layout templates in `/layouts/` are selected per-post via frontmatter (`layo
 
 ### Configuration
 
-`/data/siteMetadata.js` is the central config for site title, analytics (Umami), comments (Twikoo), search, and social links.
+`/data/siteMetadata.js` is the central config for site title, analytics (Umami), search, and social links.
 
 `next.config.js` manages CSP headers, remote image patterns, and SVG loading (via @svgr/webpack). Security headers are applied to all routes.
 
 ### Path Aliases
 
 TypeScript paths (configured in `tsconfig.json`):
+
 - `@/components` → `./components`
 - `@/data` → `./data`
 - `@/layouts` → `./layouts`

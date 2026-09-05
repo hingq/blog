@@ -1,4 +1,4 @@
-/** @type {import('../types/comments').SiteMetadataConfig } */
+/** @type {import('pliny/config').PlinyConfig } */
 const siteMetadata = {
   // title: 'aether',
   author: 'diving he',
@@ -30,7 +30,7 @@ const siteMetadata = {
     // supports Plausible, Simple Analytics, Umami, Posthog or Google Analytics.
     umamiAnalytics: {
       umamiWebsiteId: 'd691f90c-01a8-4c15-a47e-7612da962f1b',
-      src: 'https://umami.fortunately.top/script.js',
+      src: 'http://82.156.247.203:8080/script.js',
     },
     // plausibleAnalytics: {
     //   plausibleDataDomain: '', // e.g. tailwind-nextjs-starter-blog.vercel.app
@@ -50,13 +50,6 @@ const siteMetadata = {
   //   // Please add your .env file and modify it according to your selection
   //   provider: 'buttondown',
   // },
-  comments: {
-    provider: 'twikoo',
-    twikooConfig: {
-      envId: 'https://comment.fortunately.top/',
-      lang: 'zh-CN',
-    },
-  },
   search: {
     provider: 'kbar', // kbar or algolia
     kbarConfig: {
